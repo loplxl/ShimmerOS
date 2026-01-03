@@ -18,18 +18,12 @@ class sidebar(ctk.CTkFrame):
         homeButton = ctk.CTkButton(self, text="Home", command=master.homePage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         downloadsButton = ctk.CTkButton(self, text="Downloads", command=master.downloadsPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         tweaksButton = ctk.CTkButton(self, text="Tweaks", command=master.tweaksPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
-<<<<<<< HEAD
-=======
         toolsButton = ctk.CTkButton(self, text="Tools", command=master.toolsPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
->>>>>>> 6ef9f89 (add auto timer res)
         aboutButton = ctk.CTkButton(self, text="About", command=master.aboutPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         
         
         homeButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
         downloadsButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
         tweaksButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
-<<<<<<< HEAD
-=======
         toolsButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
->>>>>>> 6ef9f89 (add auto timer res)
         aboutButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')

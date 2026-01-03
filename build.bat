@@ -1,1 +1,2 @@
-pyinstaller --onefile --windowed --icon=icon.ico --add-data "about.png;." --add-data "options.png;." --add-data "icon.png;." main.py
+pyinstaller --onefile --windowed --icon=icon.ico --add-data "about.png;." --add-data "options.png;." --add-data "icon.png;." main.py --name OSO.exe
+pause

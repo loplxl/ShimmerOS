@@ -2,15 +2,16 @@ import customtkinter as ctk
 from tkinter import StringVar
 from os.path import join
 from os import environ,system,startfile
-from subprocess import Popen, PIPE, CREATE_NEW_CONSOLE
+from subprocess import Popen, PIPE, CREATE_NEW_CONSOLE, CREATE_NO_WINDOW
 import threading
 import re
 from time import sleep, time
 
 running = False
-stop_flag = threading.Event()
+
 
 def apply(self):
+    self.stop = threading.Event()
     createnewtl = False
     try:
         if not self.ATRtoplevel.winfo_exists():
@@ -78,12 +79,12 @@ def apply(self):
 
         
         self.confirmBtn = ctk.CTkButton(self.ATRtoplevel, text="Confirm", font=ctk.CTkFont(size=20), fg_color="#1a1720", hover_color="#16131c")
-        self.timerresthread = threading.Thread(target=confirm, args=(minres, maxres, interval, samples, self.confirmBtn, self.statusLabel))
+        self.timerresthread = threading.Thread(target=confirm, args=(minres, maxres, interval, samples, self.confirmBtn, self.statusLabel), daemon=True)
         self.confirmBtn.configure(command=lambda: parseAndStart(minres,maxres,interval,samples,self.confirmBtn))
 
         self.confirmBtn.pack(side="top", pady=(10,0))
 
-        threading.Thread(target=heartbeat,args=(self.ATRtoplevel,self.timerresthread)).start()
+        threading.Thread(target=heartbeat,args=(self.ATRtoplevel,self.timerresthread), daemon=True).start()
     self.ATRtoplevel.attributes("-topmost", True)
     self.ATRtoplevel.after(10,lambda: self.ATRtoplevel.attributes("-topmost", False))
     
@@ -102,10 +103,10 @@ def confirm(minres,maxres,interval,samples,btn,label):
     while time() - beforetime < 0.1:
         pass
     cmd = f"{join(TRES_DIR,"timerres.exe")} --minRes {minres.get()} --maxRes {maxres.get()} --interval {interval.get()} --samples {samples.get()}"
-    process = Popen(cmd.split(" "),stdout=PIPE,text=True)
+    process = Popen(cmd.split(" "),creationflags=CREATE_NO_WINDOW,stdout=PIPE,text=True)
     for line in process.stdout:
 
-        if stop_flag.is_set(): #toplevel is gone
+        if btn.master.master.stop.is_set(): #toplevel is gone
             break
         
         line = line.strip()
@@ -120,7 +121,7 @@ def confirm(minres,maxres,interval,samples,btn,label):
             label.configure(text=f"Benchmark complete\nApplying resolution {bestres} (delta: {bestdelta})")
             apps = ["stress","MeasureSleep","SetTimerResolution"]
             for app in apps:
-                Popen(["taskkill","/f","/im",f"{app}.exe"])
+                Popen(["taskkill","/f","/im",f"{app}.exe"],creationflags=CREATE_NO_WINDOW)
 
             #save settimerres shortcut to startup folder
             import win32com.client as cli
@@ -140,6 +141,7 @@ def confirm(minres,maxres,interval,samples,btn,label):
             #    ,creationflags=CREATE_NO_WINDOW)
             #if youre seeing this tell me why this doesnt work ^ please plase paslepaslepaslepsalesaleap i tried \ instead of /
             system(r'start "" /b C:/PostInstall/TimerResolution/SetTimerResolution.exe --no-console --resolution ' + str(bestres))
+            label.configure(text=f"Tool execution complete, added startup task:\nResolution: {bestres} Delta: {bestdelta}")
     
 
 def error(btn,msg):
@@ -150,10 +152,11 @@ def heartbeat(toplevel: ctk.CTkToplevel, thread: threading.Thread):
     while True:
         try:
             if not toplevel.winfo_exists():
-                stop_flag.set()
+                toplevel.master.stop.set()
+            else:
+                sleep(0.5)
         except RuntimeError:
             pass
-        sleep(0.5)
 
 def parseAndStart(minres,maxres,interval,samples,btn):
     try:
