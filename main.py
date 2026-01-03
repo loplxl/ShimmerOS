@@ -5,6 +5,10 @@ from sidebar import sidebar
 from homePage import homePage
 from downloadsPage import downloadsPage
 from tweaksPage import tweaksPage
+<<<<<<< HEAD
+=======
+from toolsPage import toolsPage
+>>>>>>> 6ef9f89 (add auto timer res)
 from aboutPage import aboutPage
 
 from os import listdir
@@ -13,6 +17,10 @@ from utils import resource_path #used to find files built into exe / in the curr
 class newGUI(ctk.CTk):
     def __init__(self):
         super().__init__(fg_color="#201d26")
+<<<<<<< HEAD
+=======
+        self.ATRtoplevel = False
+>>>>>>> 6ef9f89 (add auto timer res)
         self.currentTab = "initialising"
         self.geometry("1200x650")
         self.title("OSlivion Options")
@@ -20,6 +28,10 @@ class newGUI(ctk.CTk):
             "home": None,
             "downloads": None,
             "tweaks": None,
+<<<<<<< HEAD
+=======
+            "tools": None,
+>>>>>>> 6ef9f89 (add auto timer res)
             "about": None
         }
         self.homePage_init()
@@ -77,6 +89,23 @@ class newGUI(ctk.CTk):
             # show tweaks page
             self.main_area.page = self.cachedFrames["tweaks"]
             self.main_area.page.pack(side="right", fill="both", expand=True)
+<<<<<<< HEAD
+=======
+    
+    def toolsPage_init(self):
+        if self.currentTab != "tools":
+            self.currentTab = "tools"
+            # hide page
+            for child in self.main_area.winfo_children():
+                child.pack_forget()
+            
+            if self.cachedFrames["tools"] is None:
+                self.cachedFrames["tools"] = toolsPage(master=self)
+            
+            # show tools page
+            self.main_area.page = self.cachedFrames["tools"]
+            self.main_area.page.pack(side="right", fill="both", expand=True)
+>>>>>>> 6ef9f89 (add auto timer res)
 
     def aboutPage_init(self):
         if self.currentTab != "about":
@@ -84,7 +113,11 @@ class newGUI(ctk.CTk):
             # hide page
             for child in self.main_area.winfo_children():
                 child.pack_forget()
+<<<<<<< HEAD
             
+=======
+                
+>>>>>>> 6ef9f89 (add auto timer res)
             if self.cachedFrames["about"] is None:
                 self.cachedFrames["about"] = aboutPage(master=self)
             
@@ -92,4 +125,13 @@ class newGUI(ctk.CTk):
             self.main_area.page = self.cachedFrames["about"]
             self.main_area.page.pack(side="right", fill="both", expand=True)
 gui = newGUI()
+<<<<<<< HEAD
 gui.mainloop()
+=======
+gui.mainloop()
+print("gui dead, ensure timer res executables arent running")
+from subprocess import Popen
+apps = ["stress","MeasureSleep","timerres"]
+for app in apps:
+    Popen(["taskkill","/f","/im",f"{app}.exe"])
+>>>>>>> 6ef9f89 (add auto timer res)
