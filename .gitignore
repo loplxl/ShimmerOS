@@ -1,0 +1,7 @@
+version_info.txt
+dist/
+build/
+__pycache__/
+tools/__pycache__/
+build.bat
+*.spec
