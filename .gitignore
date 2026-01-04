@@ -3,6 +3,5 @@ dist/
 build/
 __pycache__/
 tools/__pycache__/
-.gitignore
 build.bat
-main.spec
+*.spec

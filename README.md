@@ -23,5 +23,10 @@
     <p>
       Buttons are provided to apply / undo tweaks from OSlivion
     </p>
+    <h2>Tools</h2>
+    <p>
+      As of now, one tool is provided:
+      Auto Timer Resolution: Automatically starts a stress tests and tests a given range of timer resolutions and applies the best one for you.
+    </p>
   </p>
 </div>
