@@ -20,7 +20,8 @@ class toolsPage(ctk.CTkFrame):
 
         ATRBtnContainer = ctk.CTkFrame(ATRFrame, fg_color="transparent", bg_color="transparent")
         ATRApplyBtn = ctk.CTkButton(ATRBtnContainer, text="Apply", font=ctk.CTkFont(size=16), fg_color="#00aa00", hover_color="#006600", width=150, command=lambda: autotimerres.apply(self.master.master))
-        ATRDefaultBtn = ctk.CTkButton(ATRBtnContainer, text="Default", font=ctk.CTkFont(size=16) , fg_color="#aa0000", hover_color="#660000", width=150, command=lambda: autotimerres.default(self.master.master))
+        ATRDefaultBtn = ctk.CTkButton(ATRBtnContainer, text="Default", font=ctk.CTkFont(size=16) , fg_color="#aa0000", hover_color="#660000", width=150)
+        ATRDefaultBtn.configure(command=lambda: autotimerres.default(self.master.master,ATRDefaultBtn))
 
         ATRApplyBtn.grid(row=0, column=0, padx=50, pady=10)
         ATRDefaultBtn.grid(row=0, column=1, padx=50, pady=10)

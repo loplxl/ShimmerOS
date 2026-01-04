@@ -8,7 +8,32 @@ import re
 from time import sleep, time
 import psutil
 
+import win32com.client as cli
+def saveTRESShortcut(bestres):
+    shortcut_location = join(environ["APPDATA"],r"Microsoft\Windows\Start Menu\Programs\Startup",f"SetTimerResolution.lnk")
+    shell = cli.Dispatch("WScript.Shell")
+    shortcut = shell.CreateShortCut(shortcut_location)
+    shortcut.Targetpath = "C:\\PostInstall\\TimerResolution\\SetTimerResolution.exe"
+    shortcut.Arguments = f"--no-console --resolution {bestres}"
+    shortcut.save()
+
+def default(self,btn):
+    saveTRESShortcut(5000) #set default to 5000ms tres
+    system(r'taskkill /f /im SetTimerResolution.exe')
+    self.after(1000, lambda: system(r'start "" /b C:/PostInstall/TimerResolution/SetTimerResolution.exe --no-console --resolution 5000'))
+    btn.configure(text="Applied.")
+    self.after(2500,lambda: btn.configure(text="Default"))
+
+
 running = False
+
+def on_close(self):
+    print("close toplevel")
+    self.stop.set()
+    self.ATRtoplevel.destroy()
+    for process in self.openSubprocesses:
+        print(process)
+        process.terminate()
 
 def apply(self):
     self.stop = threading.Event()
@@ -20,10 +45,7 @@ def apply(self):
         createnewtl = True
     if createnewtl:
         self.ATRtoplevel = ctk.CTkToplevel(self, fg_color="#201d26")
-        self.ATRtoplevel.protocol("WM_DELETE_WINDOW", lambda: (
-            self.stop.set(),
-            self.ATRtoplevel.destroy()
-        ))
+        self.ATRtoplevel.protocol("WM_DELETE_WINDOW", lambda: on_close(self))
         self.ATRtoplevel.geometry("600x200")
         self.ATRtoplevel.title("Apply Timer Resolution")
 
@@ -101,13 +123,14 @@ bestres = -1
 def cpuUsageWatch(process,label):
     p = psutil.Process(process.pid)
     p.cpu_percent(interval=None) #start measurement
-    cpuusageLabel = ctk.CTkLabel(label.master, text="")
-    cpuusageLabel.pack(side="top")
-    sleep(1)
-    while (process.poll() is None) and (not label.master.master.stop.is_set()) and (cpuusageLabel.winfo_exists()): #while process is running
-        cpuu = p.cpu_percent(interval=None) / psutil.cpu_count(logical=True)
-        cpuusageLabel.configure(text=f"Stress test CPU usage: {round(cpuu,2)}%")
+    if label.master.winfo_exists():
+        cpuusageLabel = ctk.CTkLabel(label.master, text="")
+        cpuusageLabel.pack(side="top")
         sleep(1)
+        while (process.poll() is None) and (not label.master.master.stop.is_set()) and (cpuusageLabel.winfo_exists()): #while process is running
+            cpuu = p.cpu_percent(interval=None) / psutil.cpu_count(logical=True)
+            cpuusageLabel.configure(text=f"Stress test CPU usage: {round(cpuu,2)}%")
+            sleep(1)
 
 def confirm(minres,maxres,interval,samples,btn,label):
     
@@ -146,23 +169,10 @@ def confirm(minres,maxres,interval,samples,btn,label):
             for app in apps:
                 Popen(["taskkill","/f","/im",f"{app}.exe"],creationflags=CREATE_NO_WINDOW)
 
-            #save settimerres shortcut to startup folder
-            import win32com.client as cli
-            shortcut_location = join(environ["APPDATA"],r"Microsoft\Windows\Start Menu\Programs\Startup",f"SetTimerResolution.lnk")
-            shell = cli.Dispatch("WScript.Shell")
-            shortcut = shell.CreateShortCut(shortcut_location)
-            shortcut.Targetpath = "C:\\PostInstall\\TimerResolution\\SetTimerResolution.exe"
-            shortcut.Arguments = f"--no-console --resolution {bestres}"
-            shortcut.save()
-
+            saveTRESShortcut(bestres)
 
             sleep(1) #wait for stress test to be gone + wait for settimerres to finish being killed
-            #Popen(
-            #    [
-            #        "start",'""',"/b",r"C:/PostInstall/TimerResolution/SetTimerResolution.exe","--no-console","--resolution",bestres
-            #    ] #command of 2 hours of pain PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK PLEASE WORK
-            #    ,creationflags=CREATE_NO_WINDOW)
-            #if youre seeing this tell me why this doesnt work ^ please plase paslepaslepaslepsalesaleap i tried \ instead of /
+
             system(r'start "" /b C:/PostInstall/TimerResolution/SetTimerResolution.exe --no-console --resolution ' + str(bestres))
             label.configure(text=f"Tool execution complete, added startup task:\nResolution: {bestres} Delta: {bestdelta}")
 
