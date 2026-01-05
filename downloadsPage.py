@@ -60,39 +60,34 @@ class downloadsPage(ctk.CTkFrame):
                 "requireVCheck": False
             },
             6: {
-                "name": "LibreWolf",
-                "size": 20,
-                "link": "run/choco install librewolf -y --force"
-            },
-            7: {
                 "name": "Zen Browser",
                 "size": 20,
                 "link": "https://github.com/zen-browser/desktop/releases/latest/download/zen.installer.exe",
                 "filename": "zen.installer.exe",
                 "requireVCheck": False
             },
-            8: {
+            7: {
                 "name": "Discord",
                 "size": 20,
                 "link": "https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64",
                 "filename": "DiscordSetup.exe",
                 "requireVCheck": False
             },
-            9: {
+            8: {
                 "name": "Steam",
                 "size": 20,
                 "link": "https://cdn.fastly.steamstatic.com/client/installer/SteamSetup.exe",
                 "filename": "SteamSetup.exe",
                 "requireVCheck": False
             },
-            10: {
+            9: {
                 "name": "Free Download Manager",
                 "size": 14,
                 "link": "https://files2.freedownloadmanager.org/6/latest/fdm_x64_setup.exe",
                 "filename": "fdm_x64_setup.exe",
                 "requireVCheck": False
             },
-            11: {
+            10: {
                 "name": "qBittorrent",
                 "size": 20,
                 "link": "https://sourceforge.net/projects/qbittorrent/files/latest/download",
@@ -137,80 +132,60 @@ class downloadsPage(ctk.CTkFrame):
         name = data["name"]
         async def async_download():
             url = data["link"]
-            if url.startswith("run/"): #install with cmd
-                cmd = url[4:].split(" ")
-                #chocolabel = ctk.CTkLabel(frame,text="Installing with chocolatey...")
-                #chocolabel.grid(column=1,row=0,pady=3)
-                #frame.grid_columnconfigure(1, weight=1)
-                frame.grid_columnconfigure(1, weight=1)
-                process = subprocess.Popen(cmd,stdout=subprocess.PIPE,text=True)
-                path = "Completed"
-                for line in process.stdout:
-                    line = line.strip()
-                    print(line)
-                    if line.startswith("Progress: "):
-                        matches = re.findall(r"\d+%",line)
-                        p = int(matches[0][:-1])
-                        progressbar.set(p/100)
-                    elif line.startswith("Deployed to '"):
-                        path = line.split("Deployed to '",1)[1].split("'",1)[0].replace("\"","")
-                process.wait()
-                self.after(0, lambda: self.completeDownload(progressbar,path)) #return to main thread for ui updates
-            else:
-                #handle qbittorrent separately
-                if name == "qBittorrent":
-                    curl1 = subprocess.Popen(["curl",data["link"]],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                    stdout,stderr = curl1.communicate()
-                    output = stdout.decode('utf-8')
-                    url = BeautifulSoup(output,"html.parser").find("a")["href"]
-                    data["filename"] = url.split("?ts=",1)[0].rsplit("/",1)[1]
+            #handle qbittorrent separately
+            if name == "qBittorrent":
+                curl1 = subprocess.Popen(["curl",data["link"]],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                stdout,stderr = curl1.communicate()
+                output = stdout.decode('utf-8')
+                url = BeautifulSoup(output,"html.parser").find("a")["href"]
+                data["filename"] = url.split("?ts=",1)[0].rsplit("/",1)[1]
 
 
-                if data["requireVCheck"]:
+            if data["requireVCheck"]:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url,timeout=aiohttp.ClientTimeout(total=60)) as resp:
+                        resp.raise_for_status()
+                        html = await resp.text()
+                soup = BeautifulSoup(html,"html.parser")
+                r = data["rules"]
+                
+                if name  == "Tor Browser":
+                    link = soup.find(r["tag"],class_=r["class"])
+                elif name == "Ungoogled Chromium":
+                    link = soup.find(r["tag"],href = lambda h: h and "/ungoogled-chromium-binaries/releases/windows/64bit/" in h)
+                url = link.get("href")
+                if not (link or href):
+                    self.after(0, lambda: self.showError(progressbar,"link not found")) #return to main thread for ui updates
+                    return
+                print(url)
+                if name  == "Tor Browser":
+                    url = "https://www.torproject.org/" + url
+                elif name == "Ungoogled Chromium":
+                    ver = url.rsplit("/",1)[1]
                     async with aiohttp.ClientSession() as session:
-                        async with session.get(url,timeout=aiohttp.ClientTimeout(total=60)) as resp:
+                        async with session.get("https://ungoogled-software.github.io/ungoogled-chromium-binaries/releases/windows/64bit/143.0.7499.169-1",timeout=aiohttp.ClientTimeout(total=60)) as resp:
                             resp.raise_for_status()
                             html = await resp.text()
-                    soup = BeautifulSoup(html,"html.parser")
-                    r = data["rules"]
-                    
-                    if name  == "Tor Browser":
-                        link = soup.find(r["tag"],class_=r["class"])
-                    elif name == "Ungoogled Chromium":
-                        link = soup.find(r["tag"],href = lambda h: h and "/ungoogled-chromium-binaries/releases/windows/64bit/" in h)
+                    soup2 = BeautifulSoup(html,"html.parser")
+                    link = soup2.find(r["tag"],href = lambda h: h and "installer" in h)
                     url = link.get("href")
-                    if not (link or href):
-                        self.after(0, lambda: self.showError(progressbar,"link not found")) #return to main thread for ui updates
-                        return
-                    print(url)
-                    if name  == "Tor Browser":
-                        url = "https://www.torproject.org/" + url
-                    elif name == "Ungoogled Chromium":
-                        ver = url.rsplit("/",1)[1]
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get("https://ungoogled-software.github.io/ungoogled-chromium-binaries/releases/windows/64bit/143.0.7499.169-1",timeout=aiohttp.ClientTimeout(total=60)) as resp:
-                                resp.raise_for_status()
-                                html = await resp.text()
-                        soup2 = BeautifulSoup(html,"html.parser")
-                        link = soup2.find(r["tag"],href = lambda h: h and "installer" in h)
-                        url = link.get("href")
-                    download_path = DOWNLOADS_DIR / url.rsplit("/",1)[1] #get correct filename
-                else:
-                    download_path = DOWNLOADS_DIR / data["filename"]
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as resp:
-                        resp.raise_for_status()
+                download_path = DOWNLOADS_DIR / url.rsplit("/",1)[1] #get correct filename
+            else:
+                download_path = DOWNLOADS_DIR / data["filename"]
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    resp.raise_for_status()
 
-                        total = resp.content_length or 0
-                        downloaded = 0
+                    total = resp.content_length or 0
+                    downloaded = 0
 
-                        with open(download_path, "wb") as f:
-                            async for chunk in resp.content.iter_chunked(8192):
-                                f.write(chunk)
-                                downloaded += len(chunk)
-                                if total:
-                                    self.after(0, progressbar.set, downloaded / total)
-                    self.after(0, lambda: self.completeDownload(progressbar,download_path)) #return to main thread for ui updates
+                    with open(download_path, "wb") as f:
+                        async for chunk in resp.content.iter_chunked(8192):
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if total:
+                                self.after(0, progressbar.set, downloaded / total)
+                self.after(0, lambda: self.completeDownload(progressbar,download_path)) #return to main thread for ui updates
 
         threading.Thread(target=lambda: asyncio.run(async_download()), daemon=True).start() #asynchronous download
     

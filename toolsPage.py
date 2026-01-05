@@ -2,6 +2,7 @@ import customtkinter as ctk
 from PIL import Image
 from utils import resource_path
 from tools import autotimerres
+
 class toolsPage(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master=master.main_area, fg_color="transparent")

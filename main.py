@@ -8,11 +8,26 @@ from tweaksPage import tweaksPage
 from toolsPage import toolsPage
 from aboutPage import aboutPage
 
+import threading
+
 from os import listdir
-from os.path import isdir,join,abspath
+from os.path import isdir,join,abspath,exists
 from utils import resource_path #used to find files built into exe / in the current dir
+createTweaks = False
+#first check if tweaks tab should be made
+if exists(r"C:\PostInstall\Tweaks"):
+    createTweaks = True
 class newGUI(ctk.CTk):
+    def loadTweaks(self):
+        self.basepath = r"C:\PostInstall\Tweaks"
+        self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
+
     def __init__(self):
+        self.dirs = "loading"
+        if createTweaks:
+            threading.Thread(target=self.loadTweaks, daemon=True).start()
+
+
         super().__init__(fg_color="#201d26")
         self.openSubprocesses = []
         self.currentTab = "initialising"
@@ -27,13 +42,8 @@ class newGUI(ctk.CTk):
         }
         self.homePage_init()
         self.cachedFrames["home"] = self.main_area.page
-        self.dirs = "wait"
-        self.sb = sidebar(master=self)
+        self.sb = sidebar(master=self,createTweaks=createTweaks)
         self.sb.pack(side="left", fill='y')
-
-        #load dirs for tweaks tab here to save time loading tweaks page - it is extremely unlikely that there will be a new tweak made during system uptime
-        self.basepath = "C:\\PostInstall\\Tweaks"
-        self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
     
     def homePage_init(self):
         if self.currentTab != "home":

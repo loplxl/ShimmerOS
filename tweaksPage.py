@@ -13,9 +13,10 @@ class tweaksPage(ctk.CTkFrame):
         r=0
         c=0
         frames = []
-        while self.master.master.dirs == "wait":
+        while not master.dirs or master.dirs == "loading":
             sleep(0.01)
-        for directory in self.master.master.dirs: #master.master = gui
+        for directory in master.dirs:
+            print(directory)
             localFrame = ctk.CTkFrame(self.dirbar, fg_color=['gray82', 'gray13'])
             localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory, font=ctk.CTkFont(size=24))
             localFrame.nameLabel.pack(side="left", padx=[10,0], pady=10)
@@ -36,7 +37,7 @@ class tweaksPage(ctk.CTkFrame):
         self.dirbar.pack(side="left", padx=8, pady=8, fill="both", expand=True)
     
     def tweakClicked(self,directory,state,frame):
-        path = abspath(join(self.master.master.basepath, directory, f"{directory}_{state}.bat"))
+        path = abspath(join(master.basepath, directory, f"{directory}_{state}.bat"))
         print(f"Running |{path}|.")
         Popen([f'{path}'], shell=True)
         frame.nameLabel.configure(text_color="#" + ("aaff" if state == "on" else "ffaa") + "aa") #aaffaa for on, #ffaaaa for off
