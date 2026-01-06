@@ -32,6 +32,6 @@
   <br>
   <p>
     <h1>Setup</h1>
-    Extract the TimerResolution.zip which contains dependencies for the auto timer resolution, and put the TimerResolution folder in the C:\PostInstall directory, create it if it doesnt exist, it must be organised so that C:\PostInstall\TimerResolution\timerres.exe exists.
+    Extract the TimerResolution.zip which contains dependencies for the auto timer resolution, and put the TimerResolution folder in the C:\PostInstall directory, create it if it doesnt exist, it must be organised so that C:\PostInstall\TimerResolution\timerres.exe exists. The TimerResolution.zip can be found in the repo files, not in the releases zip file.
   </p>
 </div>
