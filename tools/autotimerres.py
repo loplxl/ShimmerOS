@@ -16,7 +16,7 @@ def handleNtSetTimerResolution(minres,maxres,interval,samples,label):
     global bestdelta
     global lastres
     global bestres
-    system(r'taskkill /f /im SetTimerResolution.exe')
+    Popen(["taskkill","/f","/im","SetTimerResolution.exe"],creationflags=CREATE_NO_WINDOW)
     ntdll = ctypes.WinDLL("ntdll")
     NtSetTimerResolution = ntdll.NtSetTimerResolution
     NtSetTimerResolution.argtypes = [ctypes.wintypes.ULONG,ctypes.wintypes.BOOLEAN,ctypes.POINTER(ctypes.wintypes.ULONG)]
@@ -39,17 +39,19 @@ def handleNtSetTimerResolution(minres,maxres,interval,samples,label):
         if not label.master.winfo_exists(): #toplevel is gone
             return
         bestlabel.configure(text=f"Best: {bestres} {bestdelta}")
+    Popen(["taskkill","/f","/im","stress.exe"],creationflags=CREATE_NO_WINDOW)
     label.configure(text="Done, trying to apply...")
     saveTRESShortcut(bestres)
     label.after(500)
     label.configure(text=("Success" if exists(shortcut_location) else f"Failed, manually apply {bestres}. Guide in Discord."))
     NtSetTimerResolution(0, False, ctypes.wintypes.ULONG()) #disable temporary timer res
+    system(f'"{shortcut_location}"') #must be system so that the settimerres exe stays open after closing oso
 
 
 
 import win32com.client as cli
 import pythoncom
-shortcut_location = join(environ["APPDATA"],r"Microsoft\Windows\Start Menu\Programs\Startup",f"SetTimerResolution.lnk")
+shortcut_location = join(environ["APPDATA"],r"Microsoft\Windows\Start Menu\Programs\Startup",f"SetTimerResolution.exe.lnk")
 def saveTRESShortcut(bestres):
     pythoncom.CoInitialize()
     global shortcut_location
@@ -60,12 +62,12 @@ def saveTRESShortcut(bestres):
     shortcut.save()
     pythoncom.CoUninitialize()
 
-def default(btn):
+def default(self,btn):
     global shortcut_location
     if exists(shortcut_location):
         remove(shortcut_location)
     btn.configure(text="Applied.")
-    system(r'taskkill /f /im SetTimerResolution.exe')
+    Popen(["taskkill","/f","/im","SetTimerResolution.exe"],creationflags=CREATE_NO_WINDOW)
     btn.master.after(1500, lambda: btn.configure(text="Confirm"))
 
 
