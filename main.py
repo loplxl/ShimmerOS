@@ -2,11 +2,11 @@
 import customtkinter as ctk
 ctk.set_appearance_mode("dark")
 from sidebar import sidebar
-from homePage import homePage
-from downloadsPage import downloadsPage
-from tweaksPage import tweaksPage
-from toolsPage import toolsPage
-from aboutPage import aboutPage
+from pages.homePage import homePage
+from pages.downloadsPage import downloadsPage
+from pages.tweaksPage import tweaksPage
+from pages.toolsPage import toolsPage
+from pages.aboutPage import aboutPage
 
 import threading
 
@@ -15,11 +15,11 @@ from os.path import isdir,join,abspath,exists
 from utils import resource_path #used to find files built into exe / in the current dir
 createTweaks = False
 #first check if tweaks tab should be made
-if exists(r"C:\PostInstall\Tweaks"):
+if exists(r"C:\Oslivion\OSO\Tweaks"):
     createTweaks = True
 class newGUI(ctk.CTk):
     def loadTweaks(self):
-        self.basepath = r"C:\PostInstall\Tweaks"
+        self.basepath = r"C:\Oslivion\OSO\Tweaks"
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
     def __init__(self):

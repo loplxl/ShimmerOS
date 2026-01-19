@@ -1,28 +1,73 @@
 import customtkinter as ctk
 from tkinter import StringVar
-from os.path import join
-from os import environ,system
+from os.path import join, exists
+from os import environ, system, remove
 from subprocess import Popen, PIPE, CREATE_NEW_CONSOLE, CREATE_NO_WINDOW
 import threading
 import re
 from time import sleep, time
-import psutil
+
+
+lastres = 5000
+bestdelta = 1000
+bestres = -1
+import ctypes
+def handleNtSetTimerResolution(minres,maxres,interval,samples,label):
+    global bestdelta
+    global lastres
+    global bestres
+    system(r'taskkill /f /im SetTimerResolution.exe')
+    ntdll = ctypes.WinDLL("ntdll")
+    NtSetTimerResolution = ntdll.NtSetTimerResolution
+    NtSetTimerResolution.argtypes = [ctypes.wintypes.ULONG,ctypes.wintypes.BOOLEAN,ctypes.POINTER(ctypes.wintypes.ULONG)]
+
+    bestlabel = ctk.CTkLabel(label.master, fg_color="transparent", text="")
+    bestlabel.pack()
+    for res in range(minres,maxres+1,interval):
+        if not label.master.winfo_exists(): #toplevel is gone
+            return
+        NtSetTimerResolution(res, True, ctypes.wintypes.ULONG())
+        label.configure(text=f"Benchmarking: {res}")
+        with Popen([r"C:\Oslivion\OSO\TimerResolution\MeasureSleep.exe","--samples",samples],stdout=PIPE,text=True,creationflags=CREATE_NO_WINDOW) as MeasureSleep:
+            output = MeasureSleep.stdout.read()
+        match = re.search(r"Max: (\d+\.\d+)",output)
+        if match:
+            max = float(match.group(1))
+            if max < bestdelta:
+                bestdelta = max
+                bestres = res
+        if not label.master.winfo_exists(): #toplevel is gone
+            return
+        bestlabel.configure(text=f"Best: {bestres} {bestdelta}")
+    label.configure(text="Done, trying to apply...")
+    saveTRESShortcut(bestres)
+    label.after(500)
+    label.configure(text=("Success" if exists(shortcut_location) else f"Failed, manually apply {bestres}. Guide in Discord."))
+    NtSetTimerResolution(0, False, ctypes.wintypes.ULONG()) #disable temporary timer res
+
+
 
 import win32com.client as cli
+import pythoncom
+shortcut_location = join(environ["APPDATA"],r"Microsoft\Windows\Start Menu\Programs\Startup",f"SetTimerResolution.lnk")
 def saveTRESShortcut(bestres):
-    shortcut_location = join(environ["APPDATA"],r"Microsoft\Windows\Start Menu\Programs\Startup",f"SetTimerResolution.lnk")
+    pythoncom.CoInitialize()
+    global shortcut_location
     shell = cli.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(shortcut_location)
-    shortcut.Targetpath = "C:\\PostInstall\\TimerResolution\\SetTimerResolution.exe"
+    shortcut.Targetpath = r"C:\Oslivion\OSO\TimerResolution\SetTimerResolution.exe"
     shortcut.Arguments = f"--no-console --resolution {bestres}"
     shortcut.save()
+    pythoncom.CoUninitialize()
 
-def default(self,btn):
-    saveTRESShortcut(5000) #set default to 5000ms tres
-    system(r'taskkill /f /im SetTimerResolution.exe')
-    self.after(1000, lambda: system(r'start "" /b C:/PostInstall/TimerResolution/SetTimerResolution.exe --no-console --resolution 5000'))
+def default(btn):
+    global shortcut_location
+    if exists(shortcut_location):
+        remove(shortcut_location)
     btn.configure(text="Applied.")
-    self.after(2500,lambda: btn.configure(text="Default"))
+    system(r'taskkill /f /im SetTimerResolution.exe')
+    btn.master.after(1500, lambda: btn.configure(text="Confirm"))
+
 
 
 running = False
@@ -115,68 +160,18 @@ def apply(self):
     self.ATRtoplevel.after(10,lambda: self.ATRtoplevel.attributes("-topmost", False))
     
 
-TRES_DIR = r"C:\PostInstall\TimerResolution"
-lastres = 5000
-bestdelta = 1000
-bestres = -1
+TRES_DIR = r"C:\Oslivion\OSO\TimerResolution"
 
-def cpuUsageWatch(process,label):
-    p = psutil.Process(process.pid)
-    p.cpu_percent(interval=None) #start measurement
-    if label.master.winfo_exists():
-        cpuusageLabel = ctk.CTkLabel(label.master, text="")
-        cpuusageLabel.pack(side="top")
-        sleep(1)
-        while (process.poll() is None) and (not label.master.master.stop.is_set()) and (cpuusageLabel.winfo_exists()): #while process is running
-            cpuu = p.cpu_percent(interval=None) / psutil.cpu_count(logical=True)
-            cpuusageLabel.configure(text=f"Stress test CPU usage: {round(cpuu,2)}%")
-            sleep(1)
 
 def confirm(minres,maxres,interval,samples,btn,label):
-    
-    global bestres
-    global bestdelta
-    global lastres
-    label.configure(text="Waiting for stress test to load...")
-    stresstest = Popen(["C:/PostInstall/TimerResolution/stress"],creationflags=CREATE_NO_WINDOW)
+    stresstest = Popen(["C:/Oslivion/OSO/TimerResolution/stress"],creationflags=CREATE_NO_WINDOW)
     label.master.master.openSubprocesses.append(stresstest)
-    #start thread to watch cpu usage of stress test
-    threading.Thread(target=cpuUsageWatch, args=(stresstest,label), daemon=True).start()
-
+    label.configure(text="Loading...")
     beforetime = time()
     while time() - beforetime < 1:
         pass
-    cmd = f"{join(TRES_DIR,"timerres.exe")} --minRes {minres.get()} --maxRes {maxres.get()} --interval {interval.get()} --samples {samples.get()}"
-    timerres = Popen(cmd.split(" "),creationflags=CREATE_NO_WINDOW,stdout=PIPE,text=True)
-    label.master.master.openSubprocesses.append(timerres)
-    for line in timerres.stdout:
-        if btn.master.master.stop.is_set(): #toplevel is gone
-            break
-        
-        line = line.strip()
-        print(line)
-        if line.startswith("Benchmarking: "):
-            label.configure(text=f"{line}{f"\nBest: {bestres} (delta: {bestdelta})" if bestres != -1 else ""}")
-            lastres = line[14:]
-        elif "<" in line:
-            bestdelta = line.split(" ",1)[0]
-            bestres = lastres
-        elif re.search(r"^\d+$",line):
-            label.configure(text=f"Benchmark complete\nApplying resolution {bestres} (delta: {bestdelta})")
-            apps = ["stress","MeasureSleep","SetTimerResolution"]
-            for process in label.master.master.openSubprocesses:
-                process.terminate()
-            for app in apps:
-                Popen(["taskkill","/f","/im",f"{app}.exe"],creationflags=CREATE_NO_WINDOW)
-
-            saveTRESShortcut(bestres)
-
-            sleep(1) #wait for stress test to be gone + wait for settimerres to finish being killed
-
-            system(r'start "" /b C:/PostInstall/TimerResolution/SetTimerResolution.exe --no-console --resolution ' + str(bestres))
-            label.configure(text=f"Tool execution complete, added startup task:\nResolution: {bestres} Delta: {bestdelta}")
-
-
+    
+    threading.Thread(target=handleNtSetTimerResolution,args=(int(minres.get()),int(maxres.get()),int(interval.get()),samples.get(),label), daemon=True).start()
 
 def error(btn,msg):
     btn.configure(text=msg)
@@ -184,7 +179,7 @@ def error(btn,msg):
 
 def heartbeat(toplevel: ctk.CTkToplevel, stopflag):
     while True:
-        print("heartbeat")
+        #print("heartbeat") #for debugging
         try:
             if not toplevel.winfo_exists():
                 stopflag.set()
