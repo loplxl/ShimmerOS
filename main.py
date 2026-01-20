@@ -6,24 +6,28 @@ from pages.homePage import homePage
 from pages.downloadsPage import downloadsPage
 from pages.tweaksPage import tweaksPage
 from pages.toolsPage import toolsPage
+from pages.quickaccessPage import quickaccessPage
 from pages.aboutPage import aboutPage
 
 import threading
 
-from os import listdir
+from os import listdir,getcwd
 from os.path import isdir,join,abspath,exists
 from utils import resource_path #used to find files built into exe / in the current dir
 createTweaks = False
 #first check if tweaks tab should be made
-if exists(r"C:\Oslivion\OSO\Tweaks"):
+drive = getcwd()[:2]
+if exists(drive + r"\Oslivion\OSO\Tweaks"):
     createTweaks = True
 class newGUI(ctk.CTk):
     def loadTweaks(self):
-        self.basepath = r"C:\Oslivion\OSO\Tweaks"
+        self.basepath = self.drive + r"\Oslivion\OSO\Tweaks"
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
     def __init__(self):
         self.dirs = "loading"
+        self.drive = drive
+        print(f"Running from drive {self.drive}")
         if createTweaks:
             threading.Thread(target=self.loadTweaks, daemon=True).start()
 
@@ -104,6 +108,17 @@ class newGUI(ctk.CTk):
             # show tools page
             self.main_area.page = self.cachedFrames["tools"]
             self.main_area.page.pack(side="right", fill="both", expand=True)
+     
+    def quickaccessPage_init(self):
+        if self.currentTab != "quickaccess":
+            self.currentTab = "quickaccess"
+            # hide page
+            for child in self.main_area.winfo_children():
+                child.pack_forget()
+
+            # show quickaccess page
+            self.main_area.page = quickaccessPage(master=self)
+            self.main_area.page.pack(side="right", fill="both", expand=True)
 
     def aboutPage_init(self):
         if self.currentTab != "about":
@@ -123,7 +138,7 @@ def on_close(gui):
     try:
         gui.stop.set()
     except Exception:
-        print("no auto timer res done")
+        pass
     from subprocess import Popen, CREATE_NO_WINDOW
     apps = ["stress","MeasureSleep","timerres"]
     for app in apps:

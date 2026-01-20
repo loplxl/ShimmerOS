@@ -33,7 +33,7 @@ class aboutPage(ctk.CTkFrame):
         self.DCFrame = ctk.CTkFrame(self, fg_color="transparent")
 
         self.DCNameLabel = ctk.CTkLabel(self.DCFrame, text="Discord:", font=ctk.CTkFont(size=16))
-        self.DCLinkLabel = ctk.CTkLabel(self.DCFrame, text="discord.gg/CSJfvagRbt",
+        self.DCLinkLabel = ctk.CTkLabel(self.DCFrame, text="https://dsc.gg/Oslivion",
             font=ctk.CTkFont(size=16), cursor="hand2", text_color="#0000ff")
 
         self.DCNameLabel.pack(side="left", padx=(0,10))
@@ -41,7 +41,7 @@ class aboutPage(ctk.CTkFrame):
 
         self.DCLinkLabel.bind("<Enter>", lambda e: e.widget.master.configure(text_color="#0000aa"))
         self.DCLinkLabel.bind("<Leave>", lambda e: e.widget.master.configure(text_color="#0000ff"))
-        self.DCLinkLabel.bind("<Button-1>", lambda e: openLink("https://discord.gg/CSJfvagRbt"))
+        self.DCLinkLabel.bind("<Button-1>", lambda e: openLink("https://dsc.gg/Oslivion"))
         self.DCFrame.pack(side="top", pady=(5,0))
 
         self.creditsTitle = ctk.CTkLabel(self, text="Credits", font=ctk.CTkFont(size=28))

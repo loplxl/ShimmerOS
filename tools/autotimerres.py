@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE, CREATE_NEW_CONSOLE, CREATE_NO_WINDOW
 import threading
 import re
 from time import sleep, time
-
+from utils import resource_path
 
 lastres = 5000
 bestdelta = 1000
@@ -28,7 +28,7 @@ def handleNtSetTimerResolution(minres,maxres,interval,samples,label):
             return
         NtSetTimerResolution(res, True, ctypes.wintypes.ULONG())
         label.configure(text=f"Benchmarking: {res}")
-        with Popen([r"C:\Oslivion\OSO\TimerResolution\MeasureSleep.exe","--samples",samples],stdout=PIPE,text=True,creationflags=CREATE_NO_WINDOW) as MeasureSleep:
+        with Popen((resource_path("TimerResolution\\MeasureSleep").split(" ") + ["--samples",samples]),stdout=PIPE,text=True,creationflags=CREATE_NO_WINDOW) as MeasureSleep:
             output = MeasureSleep.stdout.read()
         match = re.search(r"Max: (\d+\.\d+)",output)
         if match:
@@ -57,7 +57,7 @@ def saveTRESShortcut(bestres):
     global shortcut_location
     shell = cli.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(shortcut_location)
-    shortcut.Targetpath = r"C:\Oslivion\OSO\TimerResolution\SetTimerResolution.exe"
+    shortcut.Targetpath = resource_path("TimerResolution\\SetTimerResolution.exe")
     shortcut.Arguments = f"--no-console --resolution {bestres}"
     shortcut.save()
     pythoncom.CoUninitialize()
@@ -162,11 +162,11 @@ def apply(self):
     self.ATRtoplevel.after(10,lambda: self.ATRtoplevel.attributes("-topmost", False))
     
 
-TRES_DIR = r"C:\Oslivion\OSO\TimerResolution"
+TRES_DIR = r"TimerResolution"
 
 
 def confirm(minres,maxres,interval,samples,btn,label):
-    stresstest = Popen(["C:/Oslivion/OSO/TimerResolution/stress"],creationflags=CREATE_NO_WINDOW)
+    stresstest = Popen(resource_path("TimerResolution\\stress").split(" "),creationflags=CREATE_NO_WINDOW)
     label.master.master.openSubprocesses.append(stresstest)
     label.configure(text="Loading...")
     beforetime = time()

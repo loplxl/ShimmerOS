@@ -1,202 +1,135 @@
 import customtkinter as ctk
-from PIL import Image
-from utils import resource_path
 import threading
-from os.path import basename
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
 import subprocess
-import re
-
+import importlib
 from pathlib import Path
-DOWNLOADS_DIR = Path.home() / "Downloads"
+#goal:
+#function to delete button, create progressbar and then run the function to get the url
+#asynchronously run another function to download it to allow the rest of the gui to work
+
 class downloadsPage(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master=master.main_area, fg_color="transparent")
-        self.titleBar = ctk.CTkLabel(self, text="Downloads", font=ctk.CTkFont(size=32,weight="bold"), bg_color="#1d1a23", height=50)
-        self.titleBar.pack(side="top", fill="x", pady=(0,5))
-        data = {
-            1: {
-                "name": "Brave Browser",
-                "size": 20,
-                "link": "https://laptop-updates.brave.com/latest/winx64",
-                "filename": "BraveBrowserSetup.exe",
-                "requireVCheck": False
-            },
-            2: {
-                "name": "Ungoogled Chromium",
-                "size": 14,
-                "link": "https://ungoogled-software.github.io/ungoogled-chromium-binaries/",
-                "requireVCheck": True,
-                "rules": {
-                    "tag": "a",
-                    "class": "td"
-                }
-            },
-            3: {
-                "name": "Tor Browser",
-                "size": 20,
-                "add": "https://www.torproject.org/",
-                "link": "https://www.torproject.org/download/",
-                "requireVCheck": True,
-                "rules": {
-                    "tag": "a",
-                    "class": "btn btn-primary mt-4 downloadLink"
-                }
-            },
-            4: {
-                "name": "Firefox Browser",
-                "size": 20,
-                "link": "https://download.mozilla.org/?product=firefox-stub&os=win&lang=en-US",
-                "filename": "Firefox Installer.exe",
-                "requireVCheck": False
-            },
-            5: {
-                "name": "Mullvad Browser",
-                "size": 20,
-                "link": "https://mullvad.net/en/download/browser/win64/latest",
-                "filename": "Mullvad Browser.exe",
-                "requireVCheck": False
-            },
-            6: {
-                "name": "Zen Browser",
-                "size": 20,
-                "link": "https://github.com/zen-browser/desktop/releases/latest/download/zen.installer.exe",
-                "filename": "zen.installer.exe",
-                "requireVCheck": False
-            },
-            7: {
-                "name": "Discord",
-                "size": 20,
-                "link": "https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64",
-                "filename": "DiscordSetup.exe",
-                "requireVCheck": False
-            },
-            8: {
-                "name": "Steam",
-                "size": 20,
-                "link": "https://cdn.fastly.steamstatic.com/client/installer/SteamSetup.exe",
-                "filename": "SteamSetup.exe",
-                "requireVCheck": False
-            },
-            9: {
-                "name": "Free Download Manager",
-                "size": 14,
-                "link": "https://files2.freedownloadmanager.org/6/latest/fdm_x64_setup.exe",
-                "filename": "fdm_x64_setup.exe",
-                "requireVCheck": False
-            },
-            10: {
-                "name": "qBittorrent",
-                "size": 20,
-                "link": "https://sourceforge.net/projects/qbittorrent/files/latest/download",
-                "filename": "unknown", #placeholder name - gets replaced by latest ver name
-                "requireVCheck": False
-            }
-        }
-        self.scrollableDlFrame = ctk.CTkScrollableFrame(self, fg_color="#201d26")
-        self.dlFrames = []
-        for i,dl in enumerate(data):
-            d = data[dl]
-            row = i // 3
-            col = i % 3
-
-
-            dlFrame = ctk.CTkFrame(self.scrollableDlFrame, fg_color="#201d26")
-            dlFrame.grid_propagate(False)
-            dlFrame.configure(height=30)
-            dlFrame.grid_columnconfigure(1, weight=1)
-
-            dlLabel = ctk.CTkLabel(dlFrame, text=d["name"], font=ctk.CTkFont(size=d["size"]))
-            dlLabel.grid_propagate(False)
-            dlLabel.configure(width=150)
-            dlLabel.grid(column=0,row=0, sticky="nsew", padx=(0,5))
-
-            dlBtn = ctk.CTkButton(dlFrame, text="Download", font=ctk.CTkFont(size=16))
-            dlBtn.configure(command=lambda b=dlBtn,f=dlFrame,d=d: self.download(b,f,d))
-            dlBtn.grid(column=1,row=0, sticky="nsew")
-            dlFrame.grid(column=col, row=row, padx=15, pady=9, sticky="nsew")
-            self.dlFrames.append(dlFrame)
-        self.scrollableDlFrame.pack(side="top", fill="both", expand=True)
-        for c in range(3):
-            self.scrollableDlFrame.grid_columnconfigure(c, weight=1)
-
-    def download(self, btn, frame, data):
+    async def uiUpdate(self,progressbar,frac):
+        print("ui update called")
+        progressbar.set(frac)
+    def completeDownload(self,progressbar,appFrame):
+        completeLabel = ctk.CTkLabel(appFrame, text="Complete", text_color="#00ff00", font=ctk.CTkFont(size=20))
+        progressbar.destroy()
+        completeLabel.grid(row=0,column=1,padx=(0,8))
+    def download(self,btn,appFrame,name):
         btn.destroy()
-
-        progressbar = ctk.CTkProgressBar(frame)
+        progressbar = ctk.CTkProgressBar(appFrame,width=75)
         progressbar.set(0)
-        progressbar.grid(column=1, row=0, pady=3)
-
-        name = data["name"]
-        async def async_download():
-            url = data["link"]
-            #handle qbittorrent separately
-            if name == "qBittorrent":
-                curl1 = subprocess.Popen(["curl",data["link"]],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-                stdout,stderr = curl1.communicate()
-                output = stdout.decode('utf-8')
-                url = BeautifulSoup(output,"html.parser").find("a")["href"]
-                data["filename"] = url.split("?ts=",1)[0].rsplit("/",1)[1]
-
-
-            if data["requireVCheck"]:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url,timeout=aiohttp.ClientTimeout(total=60)) as resp:
-                        resp.raise_for_status()
-                        html = await resp.text()
-                soup = BeautifulSoup(html,"html.parser")
-                r = data["rules"]
-                
-                if name  == "Tor Browser":
-                    link = soup.find(r["tag"],class_=r["class"])
-                elif name == "Ungoogled Chromium":
-                    link = soup.find(r["tag"],href = lambda h: h and "/ungoogled-chromium-binaries/releases/windows/64bit/" in h)
-                url = link.get("href")
-                if not (link or href):
-                    self.after(0, lambda: self.showError(progressbar,"link not found")) #return to main thread for ui updates
-                    return
-                print(url)
-                if name  == "Tor Browser":
-                    url = "https://www.torproject.org/" + url
-                elif name == "Ungoogled Chromium":
-                    ver = url.rsplit("/",1)[1]
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get("https://ungoogled-software.github.io/ungoogled-chromium-binaries/releases/windows/64bit/143.0.7499.169-1",timeout=aiohttp.ClientTimeout(total=60)) as resp:
-                            resp.raise_for_status()
-                            html = await resp.text()
-                    soup2 = BeautifulSoup(html,"html.parser")
-                    link = soup2.find(r["tag"],href = lambda h: h and "installer" in h)
-                    url = link.get("href")
-                download_path = DOWNLOADS_DIR / url.rsplit("/",1)[1] #get correct filename
-            else:
-                download_path = DOWNLOADS_DIR / data["filename"]
+        app = importlib.import_module(f"downloads.{name}")
+        url,path = asyncio.run(app.getURL())
+        progressbar.grid(row=0,column=1,padx=(0,5),sticky="e")
+        async def uiUpdate(progressbar,frac):
+            self.after(0,progressbar.set,frac)
+        async def async_download(url,path,progressbar):
+            lastUpdateFrac = 0
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as resp:
                     resp.raise_for_status()
-
                     total = resp.content_length or 0
                     downloaded = 0
-
-                    with open(download_path, "wb") as f:
+                    with open(path, "wb") as f:
                         async for chunk in resp.content.iter_chunked(8192):
                             f.write(chunk)
                             downloaded += len(chunk)
                             if total:
-                                self.after(0, progressbar.set, downloaded / total)
-                self.after(0, lambda: self.completeDownload(progressbar,download_path)) #return to main thread for ui updates
+                                frac = downloaded/total
+                                if frac-lastUpdateFrac >= 0.01: #only update ui every 1% downloaded
+                                    threading.Thread(target=lambda: asyncio.run(uiUpdate(progressbar,frac)), daemon=True).start() #asynchronous download
+                                    lastUpdateFrac = frac
 
-        threading.Thread(target=lambda: asyncio.run(async_download()), daemon=True).start() #asynchronous download
-    
-    def completeDownload(self,progressbar,path):
-        dlFrame = progressbar.master
-        progressbar.destroy()
-        dlFin = ctk.CTkLabel(dlFrame, text=path, font=ctk.CTkFont(size=9), text_color="#00ff00", justify="center", wraplength=150)
-        dlFin.grid(column=1,row=0, sticky="nsew")
-    
-    def showError(self,progressbar,e):
-        dlFrame = progressbar.master
-        progressbar.destroy()
-        dlErr = ctk.CTkLabel(dlFrame, text=f"Error, {e}", font=ctk.CTkFont(size=16), text_color="#ff0000", justify="center", wraplength=150)
-        dlErr.grid(column=1,row=0, sticky="nsew")
+            self.after(0,lambda: self.completeDownload(progressbar,progressbar.master))
+        threading.Thread(target=lambda: asyncio.run(async_download(url,path,progressbar)), daemon=True).start() #asynchronous download
+
+
+        
+    def __init__(self, master):
+        super().__init__(master=master.main_area, fg_color="transparent")
+        self.titleBar = ctk.CTkLabel(self, text="Downloads (downloads go to downloads folder)", font=ctk.CTkFont(size=32,weight="bold"), bg_color="#1d1a23", height=50)
+        self.titleBar.pack(side="top", fill="x", pady=(0,5))
+        downloads = { #category / [name to display,module location,font size]
+            "Oslivion Options quick access": [
+                ["Autoruns","quickaccess.autoruns",20],
+                ["Interrupt Affinity\nPolicy Tool","quickaccess.iapt",14]
+            ],
+            "Firefox based browsers": [
+                ["⭐ Tor","firefox.tor",22],
+                ["⭐ Mullvad","firefox.mullvad",20],
+                ["Zen","firefox.zen",22],
+                ["Waterfox","firefox.waterfox",20],
+                ["⭐ Firefox","firefox.firefox",20],
+                ["Librewolf","firefox.librewolf",20],
+                ["Floorp","firefox.floorp",20]
+            ],
+            "Chromium based browsers": [
+                ["Google Chrome","chromium.chrome",18],
+                ["⭐ Brave","chromium.brave",20],
+                ["Vivaldi","chromium.vivaldi",20],
+                ["Ungoogled\nChromium","chromium.ungoogled",14],
+                ["⭐ Helium","chromium.helium",20],
+                ["SRWare Iron","chromium.swiron",18],
+                ["Comodo Dragon","chromium.comododragon",16],
+                ["Epic Privacy\nBrowser","chromium.epic",14],
+                ["Opera GX","chromium.operagx",18],
+                ["Opera","chromium.opera",20],
+                ["Yandex","chromium.yandex",20],
+                ["Arc","chromium.arc",22]
+            ],
+            "Utilities": [
+                ["Legcord","utility.legcord",20],
+                ["Discord","utility.discord",20],
+                ["Vencord","utility.vencord",20],
+                ["Steam","utility.steam",22],
+                ["VLC","utility.vlc",22],
+                ["Custom Resolution\nUtility","utility.cru",14],
+                ["MoreClockTool","utility.mct",17],
+                ["CPU-Z","utility.cpuz",22],
+                ["Notepad++","utility.nppp",20],
+                ["Powershell 7","utility.powershell",18],
+                ["Mullvad VPN","utility.mullvadvpn",18],
+                ["Teracopy","utility.teracopy",20],
+                ["SoundSwitch","utility.soundswitch",18],
+                ["Lightshot","utility.lightshot",19],
+                ["ShareX","utility.sharex",20],
+                ["Everything\nSearch","utility.everything",16],
+                ["OBS Studio","utility.obs",18],
+                ["Rainmeter","utility.rainmeter",19],
+                ["WinRAR","utility.winrar",20],
+                ["Malwarebytes","utility.mwb",18],
+                ["Bleachbit","utility.bleachbit",19],
+                ["Process Lasso","utility.processlasso",17],
+                ["Revo\nUninstaller","utility.revouninstaller",17]
+            ]
+        }
+        self.scrollableDlFrame = ctk.CTkScrollableFrame(self, fg_color="#201d26")
+        for category,applications in downloads.items():
+            categoryFrame = ctk.CTkFrame(self.scrollableDlFrame, fg_color="transparent")
+
+            categoryTitle = ctk.CTkLabel(categoryFrame, text=category + "\n──────────────────────────────", font=ctk.CTkFont(size=24))
+            categoryTitle.grid(row=0, column=0, pady=(0,5), columnspan=5)
+            
+            for index,app in enumerate(applications):
+                row = index // 4 + 1
+                column = index % 4
+                appFrame = ctk.CTkFrame(categoryFrame)
+                appFrame.grid_propagate(False)
+                appFrame.configure(height=40,width=220)
+
+                appFrame.grid_columnconfigure(0, weight=1)  # space for label
+                appFrame.grid_columnconfigure(1, weight=0)  # button column
+                appFrame.grid_rowconfigure(0, weight=1)  # button column
+
+                appNameLabel = ctk.CTkLabel(appFrame, text=app[0], font=ctk.CTkFont(size=app[2]), text_color="#ffff00" if app[0].startswith("⭐") else "#ffffff")
+                appDownloadButton = ctk.CTkButton(appFrame, text="Download", width=90, font=ctk.CTkFont(size=16))
+                appDownloadButton.configure(command=lambda app=app, btn=appDownloadButton: self.download(btn,btn.master,app[1]))
+                appNameLabel.grid(row=0,column=0,sticky="ew")
+                appDownloadButton.grid(row=0,column=1,padx=(0,5),sticky="e")
+                appFrame.grid(row=row,column=column,padx=5,pady=5,sticky="ew")
+            categoryFrame.pack()
+        self.scrollableDlFrame.pack(side="top",fill="both",expand=True)

@@ -18,6 +18,7 @@ class sidebar(ctk.CTkFrame):
         homeButton = ctk.CTkButton(self, text="Home", command=master.homePage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         downloadsButton = ctk.CTkButton(self, text="Downloads", command=master.downloadsPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         toolsButton = ctk.CTkButton(self, text="Tools", command=master.toolsPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
+        quickaccessButton = ctk.CTkButton(self, text="Quick Access", command=master.quickaccessPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         aboutButton = ctk.CTkButton(self, text="About", command=master.aboutPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
         
         
@@ -27,4 +28,5 @@ class sidebar(ctk.CTkFrame):
             tweaksButton = ctk.CTkButton(self, text="Tweaks", command=master.tweaksPage_init, fg_color="#1f1c25", hover_color="#23202b", font=ctk.CTkFont(size=24),height=45)
             tweaksButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
         toolsButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
+        quickaccessButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')
         aboutButton.pack(side="top", anchor="n", padx=5, pady=3, fill='x')

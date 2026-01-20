@@ -4,3 +4,4 @@ dist/OSO/
 __pycache__/
 tools/__pycache__/
 *.spec
+quickacces/
