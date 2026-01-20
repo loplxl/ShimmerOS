@@ -3,7 +3,6 @@ import threading
 import asyncio
 import aiohttp
 import importlib
-from utils import resource_path
 #goal:
 #function to delete button, create progressbar and then run the function to get the url
 #asynchronously run another function to download it to allow the rest of the gui to work
@@ -54,7 +53,7 @@ class downloadsPage(ctk.CTkFrame):
         downloads = { #category / [name to display,module location,font size]
             "Oslivion Options quick access": [
                 ["Autoruns","quickaccess.autoruns",20],
-                ["Interrupt Affinity\nPolicy Tool","quickaccess.iapt",14]
+                ["GoInterruptPolicy","quickaccess.goip",18]
             ],
             "Firefox based browsers": [
                 ["⭐ Tor","firefox.tor",22],
@@ -102,7 +101,7 @@ class downloadsPage(ctk.CTkFrame):
                 ["Malwarebytes","utility.mwb",18],
                 ["Bleachbit","utility.bleachbit",19],
                 ["Process Lasso","utility.processlasso",17],
-                ["Revo\nUninstaller","utility.revouninstaller",17]
+                ["Revo Uninstaller","utility.revouninstaller",15]
             ]
         }
         self.scrollableDlFrame = ctk.CTkScrollableFrame(self, fg_color="#201d26")

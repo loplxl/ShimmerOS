@@ -34,7 +34,19 @@ class tweaksPage(ctk.CTkFrame):
                 c = 0
                 r += 1
 
-        self.dirbar.pack(side="left", padx=8, pady=8, fill="both", expand=True)
+        warningFrame = ctk.CTkFrame(self, fg_color="#232029")
+        warningLabel1 = ctk.CTkLabel(warningFrame,text="⚠️ WARNING ⚠️",font=ctk.CTkFont(size=32))
+        warningLabel1.pack(side="top",pady=(100,0))
+        warningLabel2 = ctk.CTkLabel(warningFrame,text="Do not blindly apply tweaks that you dont know what they do. Only follow official guides.\nWe are not responsible for any damage (however unlikely) you cause upon yourself.",font=ctk.CTkFont(size=22))
+        warningLabel2.pack(side="top",pady=(15,0))
+        def proceed():
+            warningFrame.destroy()
+            self.dirbar.pack(side="left", padx=8, pady=8, fill="both", expand=True)
+        proceedBtn = ctk.CTkButton(warningFrame,text="I understand the risks",fg_color="#33ff33",hover_color="#00ff00",command=proceed,text_color="#000000")
+        proceedBtn.pack(side="top",pady=25)
+        returnBtn = ctk.CTkButton(warningFrame,text="Return Home",fg_color="#ff3333",hover_color="#ff0000",command=self.master.master.homePage_init,text_color="#000000")
+        returnBtn.pack(side="top",pady=(50,25))
+        warningFrame.pack(fill="both",expand=True)
     
     def tweakClicked(self,directory,state,frame):
         path = abspath(join(self.basepath, directory, f"{directory}_{state}.bat"))

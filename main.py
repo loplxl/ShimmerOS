@@ -8,23 +8,129 @@ from pages.tweaksPage import tweaksPage
 from pages.toolsPage import toolsPage
 from pages.quickaccessPage import quickaccessPage
 from pages.aboutPage import aboutPage
-
+from hashlib import sha256
 import threading
-
+import aiohttp
+import asyncio
+from datetime import datetime
+from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW, PIPE
 from os import listdir,getcwd
-from os.path import isdir,join,abspath,exists
-from utils import resource_path #used to find files built into exe / in the current dir
+from os.path import isdir,join,exists
 createTweaks = False
 #first check if tweaks tab should be made
 drive = getcwd()[:2]
 if exists(drive + r"\Oslivion\OSO\Tweaks"):
     createTweaks = True
+def closeAutoUpdater(self):
+    print("close auto updater")
+    self.updateTL.destroy()
 class newGUI(ctk.CTk):
+
+    async def AutoUpdater(self):
+        print("Auto updater called")
+        try:
+            self.updateTL.attributes("-topmost", True)
+            self.updateTL.after(10,lambda: self.updateTL.attributes("-topmost", False))
+            print("Auto updater already exists, bringing to front.")
+            return
+        except Exception as e:
+            print("No updater TL, creating...")
+            self.updateTL = ctk.CTkToplevel(self, fg_color="#201d26")
+            self.updateTL.protocol("WM_DELETE_WINDOW", lambda: closeAutoUpdater(self))
+            self.updateTL.geometry("400x200")
+            self.updateTL.title("Check for updates")
+
+            self.processLabel = ctk.CTkTextbox(self.updateTL,fg_color="transparent")
+            self.processLabel.configure(state="disabled")
+            self.processLabel.pack(side="top",fill="x",expand=True, pady=5,padx=5)
+            self.updateTL.attributes("-topmost", True)
+            self.updateTL.after(10,lambda: self.updateTL.attributes("-topmost", False))
+        def log(msg):
+            self.processLabel.configure(state="normal")
+            self.processLabel.insert("end", msg+"\n")
+            self.processLabel.see("end")
+            self.processLabel.configure(state="disabled")
+            self.updateTL.update()
+
+        log("Checking if update is required...")
+        log("Current version: " + self.CurrentVersion)
+        status = [0,0]
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://api.github.com/repos/loplxl/OSlivionOptions/releases/tags/" + self.CurrentVersion) as resp:
+                    resp.raise_for_status()
+                    jsonresp = await resp.json()
+                    status[0] = jsonresp["updated_at"]
+                async with session.get("https://api.github.com/repos/loplxl/OSlivionOptions/releases/latest") as resp2:
+                    resp2.raise_for_status()
+                    global jsonresp2
+                    jsonresp2 = await resp2.json()
+                    status[1] = jsonresp2["updated_at"]
+        except Exception as e:
+            log(f"Failed to get version info.\n{e}")
+            return
+        print(status)
+        log(f"Current version update time: {status[0]}")
+        log(f"Latest version update time: {status[1]}")
+
+        current = datetime.fromisoformat(status[0].replace("Z", "+00:00"))
+        latest  = datetime.fromisoformat(status[1].replace("Z", "+00:00"))
+
+        if latest <= current:
+            log("All up to date!")
+            return
+        log("Outdated OSO, updating...")
+        log("Checking if auto updater is installed...")
+        
+        OSOUpdater_PATH = join(self.drive,"/Oslivion/OSOUpdater/OSOUpdater.exe")
+
+        installed = False
+        while not installed:
+            install = False
+            if not exists(OSOUpdater_PATH):
+                log("Auto updater not installed. Installing...")
+                install = True
+            else:
+                #check uncorrupted / latest version
+                h256 = sha256()
+                h256.update(open(OSOUpdater_PATH,'rb').read())
+                hash = h256.hexdigest()
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get("https://api.github.com/repos/loplxl/OSOUpdater/releases/latest") as resp3:
+                            resp3.raise_for_status()
+                            OSOUresp = await resp3.json()
+                except Exception as e:
+                    log("Failed to hash OSOUpdater" + e)
+                    return
+                expectedhash = OSOUresp["assets"][0]["digest"][7:]
+                log("Current: " + hash)
+                log("Expected: " + expectedhash)
+                if str(hash) != str(expectedhash):
+                    log("Auto updater outdated or corrupted. Installing...")
+                    install = True
+                else:
+                    log("Auto updater not corrupted and up to date, proceeding...")
+                    break
+            if install:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("https://github.com/loplxl/OSOUpdater/releases/latest/download/OSOUpdater.exe") as resp:
+                        resp.raise_for_status()
+                        with open(OSOUpdater_PATH, "wb") as f:
+                            async for chunk in resp.content.iter_chunked(8192):
+                                f.write(chunk)
+            
+            await asyncio.sleep(1) #wait 1s before loop to ensure everything is normal
+        log("Auto updater is up to date")
+        Popen(OSOUpdater_PATH.split(" "),creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,close_fds=True)
+        on_close(self)
+
     def loadTweaks(self):
         self.basepath = self.drive + r"\Oslivion\OSO\Tweaks"
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
     def __init__(self):
+        self.CurrentVersion = "1.2"
         self.dirs = "loading"
         self.drive = drive
         print(f"Running from drive {self.drive}")

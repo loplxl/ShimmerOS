@@ -1,12 +1,11 @@
 import customtkinter as ctk
 from os import getcwd,listdir,mkdir
 from os.path import join,exists
-import threading
 from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 
 names = {
     "autoruns.exe": ("Autoruns",22),
-    "intPolicy_x64.exe": ("Interrupt Affinity\nPolicy Tool",16)
+    "GoInterruptPolicy.exe": ("GoInterruptPolicy",20)
 }
 
 class quickaccessPage(ctk.CTkFrame):
