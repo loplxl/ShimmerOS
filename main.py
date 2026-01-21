@@ -21,11 +21,14 @@ createTweaks = False
 drive = getcwd()[:2]
 OSlivionP = join(drive,"/OSlivion/")
 OSOP = join(OSlivionP,"OSO")
+OSOUP = join(OSlivionP,"OSOUpdater")
 quickaccessP = join(OSOP,"quickaccess")
 if not exists(OSlivionP):
     mkdir(OSlivionP)
 if not exists(OSOP):
     mkdir(OSOP)
+if not exists(OSOUP):
+    mkdir(OSOUP)
 if not exists(quickaccessP):
     mkdir(quickaccessP)
 
@@ -139,7 +142,7 @@ class newGUI(ctk.CTk):
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
     def __init__(self):
-        self.CurrentVersion = "1.2.0.2"
+        self.CurrentVersion = "1.2.0.3"
         self.dirs = "loading"
         self.drive = drive
         print(f"Running from drive {self.drive}")
