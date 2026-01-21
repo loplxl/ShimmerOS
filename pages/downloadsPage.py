@@ -7,6 +7,13 @@ import importlib
 #function to delete button, create progressbar and then run the function to get the url
 #asynchronously run another function to download it to allow the rest of the gui to work
 
+from os import getcwd
+import ssl
+from utils import resource_path
+ssl_ctx = ssl.create_default_context(
+    cafile=resource_path("dependencies/cacert.pem")
+)
+
 class downloadsPage(ctk.CTkFrame):
     async def uiUpdate(self,progressbar,frac):
         print("ui update called")
@@ -27,7 +34,7 @@ class downloadsPage(ctk.CTkFrame):
         async def async_download(url,path,progressbar):
             lastUpdateFrac = 0
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
+                async with session.get(url,ssl=ssl_ctx) as resp:
                     resp.raise_for_status()
                     total = resp.content_length or 0
                     downloaded = 0

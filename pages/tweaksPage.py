@@ -1,39 +1,41 @@
 import customtkinter as ctk
 from os.path import join,abspath
-from subprocess import Popen
+from os import listdir
+from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 from time import sleep
+import json
 class tweaksPage(ctk.CTkFrame):
+    def rmbBind(self,widget,description,directory):
+        widget.bind("<Button-3>",lambda e: self.helpbox(description,directory))
+        for child in widget.winfo_children():
+            self.rmbBind(child, description, directory)
+    helpTLs = {}
+    def helpbox(self, description, directory):
+        if directory in self.helpTLs:
+            helpTL = self.helpTLs[directory]
+            helpTL.attributes("-topmost", True)
+            helpTL.after(10,lambda: helpTL.attributes("-topmost", False))
+            print("TL already open, taking top")
+            return
+        print("Creating new TL")
+        helpTL = ctk.CTkToplevel(self, fg_color="#201d26")
+        helpTL.geometry("400x200")
+        def on_close(d=directory):
+            if d in self.helpTLs:
+                self.helpTLs[d].destroy()
+                del self.helpTLs[d]
+        helpTL.protocol("WM_DELETE_WINDOW",on_close)
+        self.helpTLs[directory] = helpTL
+        helpLabel = ctk.CTkLabel(helpTL,text=description)
+        helpLabel.pack(side="top",fill="x")
+        helpTL.attributes("-topmost", True)
+        helpTL.after(10,lambda: helpTL.attributes("-topmost", False))
     def __init__(self, master):
         super().__init__(master=master.main_area, fg_color="transparent")
         self.titleBar = ctk.CTkLabel(self, text="Tweaks", font=ctk.CTkFont(size=32,weight="bold"), bg_color="#1d1a23", height=50)
         self.titleBar.pack(side="top", fill="x")
 
         #create scrollable sidebar frame to display all the dirs
-        self.dirbar = ctk.CTkScrollableFrame(self, fg_color="#232029")
-        r=0
-        c=0
-        frames = []
-        while not master.dirs or master.dirs == "loading":
-            sleep(0.01)
-        for directory in master.dirs:
-            print(directory)
-            localFrame = ctk.CTkFrame(self.dirbar)
-            localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory, font=ctk.CTkFont(size=24))
-            localFrame.nameLabel.pack(side="left", padx=[10,0], pady=10)
-
-            localFrame.onButton = ctk.CTkButton(localFrame, text="ON", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.tweakClicked(d,"on",f), width=100, font=ctk.CTkFont(size=16))
-            localFrame.offButton = ctk.CTkButton(localFrame, text="OFF", fg_color="#784343", hover_color="#683333", command=lambda d=directory, f=localFrame: self.tweakClicked(d,"off",f), width=100, font=ctk.CTkFont(size=16))
-
-            localFrame.offButton.pack(side="right",padx=8)
-            localFrame.onButton.pack(side="right",padx=8)
-
-            localFrame.grid(row=r, column=c, sticky="nsew", padx=3, pady=6)
-            self.dirbar.grid_columnconfigure(c, weight=1)
-            c += 1
-            if c > 1:
-                c = 0
-                r += 1
-
         warningFrame = ctk.CTkFrame(self, fg_color="#232029")
         warningLabel1 = ctk.CTkLabel(warningFrame,text="⚠️ WARNING ⚠️",font=ctk.CTkFont(size=32))
         warningLabel1.pack(side="top",pady=(100,0))
@@ -47,9 +49,73 @@ class tweaksPage(ctk.CTkFrame):
         returnBtn = ctk.CTkButton(warningFrame,text="Return Home",fg_color="#ff3333",hover_color="#ff0000",command=self.master.master.homePage_init,text_color="#000000")
         returnBtn.pack(side="top",pady=(50,25))
         warningFrame.pack(fill="both",expand=True)
+
+        
+        self.dirbar = ctk.CTkScrollableFrame(self, fg_color="#232029")
+        r=0
+        c=0
+        frames = []
+        while not master.dirs or master.dirs == "loading":
+            sleep(0.01)
+        for directory in master.dirs:
+            filesdir = join(self.master.master.basepath,directory)
+            print("Loading " + str(filesdir))
+            files = listdir(filesdir)
+
+            try:
+                with open(join(filesdir,"help.json"),'r') as f:
+                    helpdata = json.load(f)
+                    description = helpdata["description"]
+                    file = helpdata["target"]
+            except Exception as e:
+                print(e)
+                file=str(e)
+
+            localFrame = ctk.CTkFrame(self.dirbar, cursor="hand2")
+            localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory.replace("_"," "), font=ctk.CTkFont(size=24))
+            localFrame.nameLabel.pack(side="left", padx=[10,0], pady=10)
+            if "on.bat" in files and "off.bat" in files:
+                localFrame.onButton = ctk.CTkButton(localFrame, text="ON", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"on",f), width=100, font=ctk.CTkFont(size=16))
+                localFrame.offButton = ctk.CTkButton(localFrame, text="OFF", fg_color="#784343", hover_color="#683333", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"off",f), width=100, font=ctk.CTkFont(size=16))
+                localFrame.offButton.pack(side="right",padx=8)
+                localFrame.onButton.pack(side="right",padx=8)
+                self.rmbBind(localFrame,description,join(filesdir,file))
+            else:
+                print("Targetting file " + file)
+                if file.endswith(".reg"):
+                    localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#436A78", hover_color="#335A68", command=lambda d=join(filesdir,file), f=localFrame: self.regTweakClicked(d,f))
+                    localFrame.regButton.pack(side="right",padx=8)
+                    self.rmbBind(localFrame,description,join(filesdir,file))
+                if file.endswith(".ps1"):
+                    localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#574378", hover_color="#473368", command=lambda d=join(filesdir,file), f=localFrame: self.ps1TweakClicked(d,f))
+                    localFrame.regButton.pack(side="right",padx=8)
+                    self.rmbBind(localFrame,description,join(filesdir,file))
+                else:
+                    localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
+                    localFrame.errorLabel.pack(side="right",padx=8)
+            localFrame.grid(row=r, column=c, sticky="nsew", padx=3, pady=6)
+            self.dirbar.grid_columnconfigure(c, weight=1)
+            c += 1
+            if c > 1:
+                c = 0
+                r += 1
+
+        
     
-    def tweakClicked(self,directory,state,frame):
-        path = abspath(join(self.basepath, directory, f"{directory}_{state}.bat"))
+    def ONOFFtweakClicked(self,directory,state,frame):
+        path = abspath(join(self.master.master.basepath, directory, f"{state}.bat"))
         print(f"Running |{path}|.")
-        Popen([f'{path}'], shell=True)
+        Popen([f'{path}'], shell=True, creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, close_fds=True)
         frame.nameLabel.configure(text_color="#" + ("aaff" if state == "on" else "ffaa") + "aa") #aaffaa for on, #ffaaaa for off
+    def regTweakClicked(self,directory,frame):
+        print(f"Running |{directory}|.")
+        Popen(["regedit","/s",directory], creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, close_fds=True)
+        frame.nameLabel.configure(text_color="#aaffaa")
+    def ps1TweakClicked(self,directory,frame):
+        print(f"Running |{directory}|.")
+        cmd = ["powershell.exe", '-ExecutionPolicy', 'Unrestricted', directory]
+        proc = Popen(cmd, creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, close_fds=True, shell=True)
+        print(proc.returncode)
+        frame.nameLabel.configure(text_color="#aaffaa")
+    def exeTweakClicked(self,directory):
+        print("exe")

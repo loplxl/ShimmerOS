@@ -35,7 +35,6 @@ def closeAutoUpdater(self):
     print("close auto updater")
     self.updateTL.destroy()
 class newGUI(ctk.CTk):
-
     async def AutoUpdater(self):
         print("Auto updater called")
         try:
@@ -140,7 +139,7 @@ class newGUI(ctk.CTk):
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
     def __init__(self):
-        self.CurrentVersion = "1.2.0.1"
+        self.CurrentVersion = "1.2.0.2"
         self.dirs = "loading"
         self.drive = drive
         print(f"Running from drive {self.drive}")
