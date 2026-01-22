@@ -1,6 +1,7 @@
 import customtkinter as ctk
-from os.path import join,abspath
-from os import listdir
+from os.path import join,abspath,exists
+from os import listdir,getcwd
+OSO_DIR = join(getcwd()[2:],"/OSlivion","OSO")
 from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 from time import sleep
 import json
@@ -20,13 +21,14 @@ class tweaksPage(ctk.CTkFrame):
         print("Creating new TL")
         helpTL = ctk.CTkToplevel(self, fg_color="#201d26")
         helpTL.geometry("400x200")
+        helpTL.title(directory)
         def on_close(d=directory):
             if d in self.helpTLs:
                 self.helpTLs[d].destroy()
                 del self.helpTLs[d]
         helpTL.protocol("WM_DELETE_WINDOW",on_close)
         self.helpTLs[directory] = helpTL
-        helpLabel = ctk.CTkLabel(helpTL,text=description)
+        helpLabel = ctk.CTkLabel(helpTL,text=description,wraplength=395)
         helpLabel.pack(side="top",fill="x")
         helpTL.attributes("-topmost", True)
         helpTL.after(10,lambda: helpTL.attributes("-topmost", False))
@@ -69,30 +71,47 @@ class tweaksPage(ctk.CTkFrame):
                     file = helpdata["target"]
             except Exception as e:
                 print(e)
-                file=str(e)
+                file = str(e)
 
+            try:
+                with open(join(filesdir,"help.json"),'r') as f:
+                    requirement = helpdata["requirement"]
+            except Exception as e:
+                print(e)
+                requirement = None
+            
+            requirementNotMet = False
+            if requirement == "nsudo" and not exists(join(OSO_DIR,"quickaccess","NSudo.exe")):
+                requirementNotMet = True
             localFrame = ctk.CTkFrame(self.dirbar, cursor="hand2")
             localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory.replace("_"," "), font=ctk.CTkFont(size=24))
             localFrame.nameLabel.pack(side="left", padx=[10,0], pady=10)
-            if "on.bat" in files and "off.bat" in files:
-                localFrame.onButton = ctk.CTkButton(localFrame, text="ON", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"on",f), width=100, font=ctk.CTkFont(size=16))
-                localFrame.offButton = ctk.CTkButton(localFrame, text="OFF", fg_color="#784343", hover_color="#683333", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"off",f), width=100, font=ctk.CTkFont(size=16))
-                localFrame.offButton.pack(side="right",padx=8)
-                localFrame.onButton.pack(side="right",padx=8)
-                self.rmbBind(localFrame,description,join(filesdir,file))
+            if requirementNotMet:
+                localFrame.nameLabel.configure(text=f"not met requirement: {requirement} - download it in downloads page, then reopen app", font=ctk.CTkFont(size=13))
             else:
-                print("Targetting file " + file)
-                if file.endswith(".reg"):
-                    localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#436A78", hover_color="#335A68", command=lambda d=join(filesdir,file), f=localFrame: self.regTweakClicked(d,f))
-                    localFrame.regButton.pack(side="right",padx=8)
-                    self.rmbBind(localFrame,description,join(filesdir,file))
-                if file.endswith(".ps1"):
-                    localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#574378", hover_color="#473368", command=lambda d=join(filesdir,file), f=localFrame: self.ps1TweakClicked(d,f))
-                    localFrame.regButton.pack(side="right",padx=8)
+                if "on.bat" in files and "off.bat" in files:
+                    localFrame.onButton = ctk.CTkButton(localFrame, text="ON", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"on",f), width=100, font=ctk.CTkFont(size=16))
+                    localFrame.offButton = ctk.CTkButton(localFrame, text="OFF", fg_color="#784343", hover_color="#683333", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"off",f), width=100, font=ctk.CTkFont(size=16))
+                    localFrame.offButton.pack(side="right",padx=8)
+                    localFrame.onButton.pack(side="right",padx=8)
                     self.rmbBind(localFrame,description,join(filesdir,file))
                 else:
-                    localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
-                    localFrame.errorLabel.pack(side="right",padx=8)
+                    print("Targetting file " + file)
+                    if "action.bat" in files:
+                        localFrame.onButton = ctk.CTkButton(localFrame, text="Apply", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.SingleBattweakclicked(d,f), width=216, font=ctk.CTkFont(size=16))
+                        localFrame.onButton.pack(side="right",padx=8)
+                        self.rmbBind(localFrame,description,join(filesdir,file))
+                    elif file.endswith(".reg"):
+                        localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#436A78", hover_color="#335A68", command=lambda d=join(filesdir,file), f=localFrame: self.regTweakClicked(d,f))
+                        localFrame.regButton.pack(side="right",padx=8)
+                        self.rmbBind(localFrame,description,join(filesdir,file))
+                    elif file.endswith(".ps1"):
+                        localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#574378", hover_color="#473368", command=lambda d=join(filesdir,file), f=localFrame: self.ps1TweakClicked(d,f))
+                        localFrame.regButton.pack(side="right",padx=8)
+                        self.rmbBind(localFrame,description,join(filesdir,file))
+                    else:
+                        localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
+                        localFrame.errorLabel.pack(side="right",padx=8)
             localFrame.grid(row=r, column=c, sticky="nsew", padx=3, pady=6)
             self.dirbar.grid_columnconfigure(c, weight=1)
             c += 1
@@ -105,17 +124,21 @@ class tweaksPage(ctk.CTkFrame):
     def ONOFFtweakClicked(self,directory,state,frame):
         path = abspath(join(self.master.master.basepath, directory, f"{state}.bat"))
         print(f"Running |{path}|.")
-        Popen([f'{path}'], shell=True, creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, close_fds=True)
+        Popen([f'{path}'], shell=True)
         frame.nameLabel.configure(text_color="#" + ("aaff" if state == "on" else "ffaa") + "aa") #aaffaa for on, #ffaaaa for off
     def regTweakClicked(self,directory,frame):
         print(f"Running |{directory}|.")
-        Popen(["regedit","/s",directory], creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, close_fds=True)
+        Popen(["regedit","/s",directory], shell=True)
         frame.nameLabel.configure(text_color="#aaffaa")
     def ps1TweakClicked(self,directory,frame):
         print(f"Running |{directory}|.")
         cmd = ["powershell.exe", '-ExecutionPolicy', 'Unrestricted', directory]
-        proc = Popen(cmd, creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, close_fds=True, shell=True)
+        proc = Popen(cmd, shell=True)
         print(proc.returncode)
         frame.nameLabel.configure(text_color="#aaffaa")
-    def exeTweakClicked(self,directory):
-        print("exe")
+    def SingleBattweakclicked(self,directory,frame):
+        path = abspath(join(self.master.master.basepath, directory, f"action.bat"))
+        print(f"Running |{path}|.")
+        Popen([f'{path}'], shell=True)
+        frame.nameLabel.configure(text_color="#aaffaa")
+        

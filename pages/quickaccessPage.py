@@ -5,7 +5,8 @@ from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
 
 names = {
     "autoruns.exe": ("Autoruns",22),
-    "GoInterruptPolicy.exe": ("GoInterruptPolicy",20)
+    "GoInterruptPolicy.exe": ("GoInterruptPolicy",20),
+    "NSudo.exe": ("NSudo",22)
 }
 
 class quickaccessPage(ctk.CTkFrame):

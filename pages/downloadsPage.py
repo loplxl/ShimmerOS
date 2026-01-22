@@ -22,6 +22,9 @@ class downloadsPage(ctk.CTkFrame):
         completeLabel = ctk.CTkLabel(appFrame, text="Complete", text_color="#00ff00", font=ctk.CTkFont(size=20))
         progressbar.destroy()
         completeLabel.grid(row=0,column=1,padx=(0,8))
+    async def procedureWorker(self,app,btn):
+        p = importlib.import_module(f"downloads.{app[1]}")
+        await p.getURL(self,btn)
     def download(self,btn,appFrame,name):
         btn.destroy()
         progressbar = ctk.CTkProgressBar(appFrame,width=75)
@@ -30,7 +33,10 @@ class downloadsPage(ctk.CTkFrame):
         progressbar.grid(row=0,column=1,padx=(0,5),sticky="e")
         url,path = asyncio.run(app.getURL())
         async def uiUpdate(progressbar,frac):
-            self.after(0,progressbar.set,frac)
+            try:
+                self.after(0,progressbar.set,frac)
+            except Exception:
+                pass
         async def async_download(url,path,progressbar):
             lastUpdateFrac = 0
             async with aiohttp.ClientSession() as session:
@@ -45,7 +51,7 @@ class downloadsPage(ctk.CTkFrame):
                             if total:
                                 frac = downloaded/total
                                 if frac-lastUpdateFrac >= 0.01: #only update ui every 1% downloaded
-                                    threading.Thread(target=lambda: asyncio.run(uiUpdate(progressbar,frac)), daemon=True).start() #asynchronous download
+                                    threading.Thread(target=lambda: asyncio.run(uiUpdate(progressbar,frac)), daemon=True).start()
                                     lastUpdateFrac = frac
 
             self.after(0,lambda: self.completeDownload(progressbar,progressbar.master))
@@ -60,7 +66,8 @@ class downloadsPage(ctk.CTkFrame):
         downloads = { #category / [name to display,module location,font size]
             "Oslivion Options quick access": [
                 ["Autoruns","quickaccess.autoruns",20],
-                ["GoInterruptPolicy","quickaccess.goip",18]
+                ["GoInterruptPolicy","quickaccess.goip",18],
+                ["$xNSudo","quickaccess.nsudo",22] #$x means that getURL is a procedure, not a function
             ],
             "Firefox based browsers": [
                 ["⭐ Tor","firefox.tor",22],
@@ -129,9 +136,14 @@ class downloadsPage(ctk.CTkFrame):
                 appFrame.grid_columnconfigure(1, weight=0)  # button column
                 appFrame.grid_rowconfigure(0, weight=1)  # button column
 
-                appNameLabel = ctk.CTkLabel(appFrame, text=app[0], font=ctk.CTkFont(size=app[2]), text_color="#ffff00" if app[0].startswith("⭐") else "#ffffff")
+                isProcedure = True if app[0].startswith("$x") else False
+                
+                appNameLabel = ctk.CTkLabel(appFrame, text=app[0] if not isProcedure else app[0][2:], font=ctk.CTkFont(size=app[2]), text_color="#ffff00" if app[0].startswith("⭐") else "#ffffff")
                 appDownloadButton = ctk.CTkButton(appFrame, text="Download", width=90, font=ctk.CTkFont(size=16))
-                appDownloadButton.configure(command=lambda app=app, btn=appDownloadButton: self.download(btn,btn.master,app[1]))
+                if isProcedure:
+                    appDownloadButton.configure(command=lambda app=app, btn=appDownloadButton: threading.Thread(target=lambda: asyncio.run(self.procedureWorker(app,btn)), daemon=True).start())
+                else:
+                    appDownloadButton.configure(command=lambda app=app, btn=appDownloadButton: self.download(btn,btn.master,app[1]))
                 appNameLabel.grid(row=0,column=0,sticky="ew")
                 appDownloadButton.grid(row=0,column=1,padx=(0,5),sticky="e")
                 appFrame.grid(row=row,column=column,padx=5,pady=5,sticky="ew")

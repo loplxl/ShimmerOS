@@ -8,6 +8,8 @@ import re
 from time import sleep, time
 from utils import resource_path
 
+from tools.globaltimerres import setGTRR
+
 lastres = 5000
 bestdelta = 1000
 bestres = -1
@@ -16,6 +18,8 @@ def handleNtSetTimerResolution(minres,maxres,interval,samples,label):
     global bestdelta
     global lastres
     global bestres
+    setGTRR()
+    sleep(0.5) #wait for reg to be properly applied ygm, better safe than sorry
     Popen(["taskkill","/f","/im","SetTimerResolution.exe"],creationflags=CREATE_NO_WINDOW)
     ntdll = ctypes.WinDLL("ntdll")
     NtSetTimerResolution = ntdll.NtSetTimerResolution
