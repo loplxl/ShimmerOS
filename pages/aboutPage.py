@@ -4,10 +4,11 @@ from utils import resource_path
 from webbrowser import open as openLink
 class aboutPage(ctk.CTkFrame):
     def __init__(self, master):
+        sf = master.width/1250
         super().__init__(master=master.main_area, fg_color="transparent")
         self.aboutPage_image = ctk.CTkLabel(self,image=ctk.CTkImage(
                 dark_image=Image.open(resource_path("about.png")),
-                size=(900,315)),text="")
+                size=(sf*900,sf*315)),text="")
         self.aboutPage_image.pack(side="top", pady=(20,0))
 
         self.LinksTitle = ctk.CTkLabel(self, text="Links", font=ctk.CTkFont(size=28))
@@ -47,7 +48,7 @@ class aboutPage(ctk.CTkFrame):
         self.creditsTitle = ctk.CTkLabel(self, text="Credits", font=ctk.CTkFont(size=28))
         self.creditsTitle.pack(side="top", pady=(15,4))
 
-        self.creditsLabel1 = ctk.CTkLabel(self, text="Hickensa (SapphireOS/Tool) for being the main inspiration for uchr's development of OSlivion, and my development of this tool.", font=ctk.CTkFont(size=16), cursor="hand2")
+        self.creditsLabel1 = ctk.CTkLabel(self, text="Hickensa (SapphireOS/Tool) for being the main inspiration for uchr's development of OSlivion, and my development of this tool.", font=ctk.CTkFont(size=16), cursor="hand2",wraplength=sf*1020)
         self.creditsLabel1.bind("<Button-1>", lambda e: openLink("https://github.com/HickerDicker"))
         self.creditsLabel1.pack(side="top", pady=(8,0))
 

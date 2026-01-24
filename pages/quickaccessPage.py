@@ -32,7 +32,8 @@ class quickaccessPage(ctk.CTkFrame):
             column = index % 4
             appFrame = ctk.CTkFrame(launchFrame)
             appFrame.grid_propagate(False)
-            appFrame.configure(height=40,width=220)
+            w = round((master.width/1250*1020-35)/4)
+            appFrame.configure(height=40,width=w)
 
             appFrame.grid_columnconfigure(0, weight=1)
             appFrame.grid_rowconfigure(0, weight=1)
@@ -42,14 +43,15 @@ class quickaccessPage(ctk.CTkFrame):
                 loc = f"{folderLoc}\\{data[2]}"
             except IndexError:
                 loc = f"{folderLoc}\\{app}"
-            appDownloadButton = ctk.CTkButton(appFrame, text=data[0], width=90, font=ctk.CTkFont(size=data[1]))
+            appLaunchButton = ctk.CTkButton(appFrame, text=data[0], width=90, font=ctk.CTkFont(size=data[1]))
             def launch(loc):
                 print(f"Launching {loc}")
                 try:
                     Popen([loc],creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
                 except FileNotFoundError:
                     print(f"{loc} doesnt exist")
-            appDownloadButton.configure(command=lambda loc=loc: launch(loc))
-            appDownloadButton.grid(row=0,column=0,sticky="nsew")
+            appLaunchButton.configure(command=lambda loc=loc: launch(loc))
+            master.shrink(appLaunchButton,w-20,data[1])
+            appLaunchButton.grid(row=0,column=0,sticky="nsew")
             appFrame.grid(row=row,column=column,padx=5,pady=5,sticky="ew")
         launchFrame.pack()

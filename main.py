@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-version = "1.3.1"
+version = "1.3.2"
 import customtkinter as ctk
 ctk.set_appearance_mode("dark")
-from sidebar import sidebar
+from pages.sidebar import sidebar
 from pages.homePage import homePage
 from pages.downloadsPage import downloadsPage
 from pages.tweaksPage import tweaksPage
@@ -17,6 +17,7 @@ from datetime import datetime
 from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW, PIPE
 from os import listdir,getcwd,mkdir
 from os.path import isdir,join,exists
+from math import ceil
 createTweaks = False
 #first check if tweaks tab should be made
 drive = getcwd()[:2]
@@ -161,7 +162,16 @@ class newGUI(ctk.CTk):
         self.basepath = self.drive + r"\Oslivion\OSO\Tweaks"
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
+    def shrink(self,widget,width,size):
+        text = widget.cget("text")
+        while ctk.CTkFont(size=size).measure(text) > width:
+            size -= 1
+        widget.configure(font=ctk.CTkFont(size=size))
+
     def __init__(self):
+        
+
+
         from logger.logger import ConsoleLogger
         self.logger = ConsoleLogger(master=self)
         print("hello log viewer")
@@ -174,9 +184,18 @@ class newGUI(ctk.CTk):
 
 
         super().__init__(fg_color="#201d26")
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=0)  # sidebar (fixed)
+        self.grid_columnconfigure(1, weight=1)  # main area (resizable)
+
         self.openSubprocesses = []
         self.currentTab = "initialising"
-        self.geometry("1200x650")
+        #1250x650 on 1920x1080
+        self.width = ceil(self.winfo_screenwidth()/1920*1250)
+        self.height = ceil(self.winfo_screenheight()/1080*650)
+        self.minsize(self.width,self.height)
+        print(f"Allowing {self.width}x{self.height}")
+        self.geometry(f"{self.width}x{self.height}+100+100") #+100+100 stops the gui from moving each time you open it
         self.title("OSlivion Options")
         self.cachedFrames = {
             "home": None,
@@ -188,37 +207,40 @@ class newGUI(ctk.CTk):
         self.homePage_init()
         self.cachedFrames["home"] = self.main_area.page
         self.sb = sidebar(master=self,createTweaks=createTweaks)
-        self.sb.pack(side="left", fill='y')
+        self.sb.grid(row=0,column=0,sticky="ns")
+        print(f"Detected {self.winfo_reqwidth()}x{self.winfo_reqheight()}")
     
     def homePage_init(self):
         if self.currentTab != "home":
             if self.currentTab == "initialising":
                 self.main_area = ctk.CTkFrame(self, fg_color="transparent")
-                self.main_area.pack(side="right", fill="both", expand=True)
+                self.main_area.grid_rowconfigure(0, weight=1)
+                self.main_area.grid_columnconfigure(1, weight=1)
+                self.main_area.grid(row=0,column=1,sticky="nsew")
             self.currentTab = "home"
             # hide page 
             for child in self.main_area.winfo_children():
-                child.pack_forget()
+                child.grid_forget()
             if self.cachedFrames["home"] is None:
                 self.cachedFrames["home"] = homePage(master=self)
 
             # show home page
             self.main_area.page = self.cachedFrames["home"]
-            self.main_area.page.pack(side="right", fill="both", expand=True)
+            self.main_area.page.grid(row=0,column=1,sticky="nsew")
 
     def downloadsPage_init(self):
         if self.currentTab != "downloads":
             self.currentTab = "downloads"
             # hide page
             for child in self.main_area.winfo_children():
-                child.pack_forget()
+                child.grid_forget()
             
             if self.cachedFrames["downloads"] is None:
                 self.cachedFrames["downloads"] = downloadsPage(master=self)
             
             # show downloads page
             self.main_area.page = self.cachedFrames["downloads"]
-            self.main_area.page.pack(side="right", fill="both", expand=True)
+            self.main_area.page.grid(row=0,column=1,sticky="nsew")
     
     def tweaksPage_init(self):
         if self.currentTab != "tweaks":
@@ -226,53 +248,53 @@ class newGUI(ctk.CTk):
 
             # hide page
             for child in self.main_area.winfo_children():
-                child.pack_forget()
+                child.grid_forget()
 
             if self.cachedFrames["tweaks"] is None:
                 self.cachedFrames["tweaks"] = tweaksPage(master=self)
             
             # show tweaks page
             self.main_area.page = self.cachedFrames["tweaks"]
-            self.main_area.page.pack(side="right", fill="both", expand=True)
+            self.main_area.page.grid(row=0,column=1,sticky="nsew")
     
     def toolsPage_init(self):
         if self.currentTab != "tools":
             self.currentTab = "tools"
             # hide page
             for child in self.main_area.winfo_children():
-                child.pack_forget()
+                child.grid_forget()
             
             if self.cachedFrames["tools"] is None:
                 self.cachedFrames["tools"] = toolsPage(master=self)
             
             # show tools page
             self.main_area.page = self.cachedFrames["tools"]
-            self.main_area.page.pack(side="right", fill="both", expand=True)
+            self.main_area.page.grid(row=0,column=1,sticky="nsew")
      
     def quickaccessPage_init(self):
         if self.currentTab != "quickaccess":
             self.currentTab = "quickaccess"
             # hide page
             for child in self.main_area.winfo_children():
-                child.pack_forget()
+                child.grid_forget()
 
             # show quickaccess page
             self.main_area.page = quickaccessPage(master=self)
-            self.main_area.page.pack(side="right", fill="both", expand=True)
+            self.main_area.page.grid(row=0,column=1,sticky="nsew")
 
     def aboutPage_init(self):
         if self.currentTab != "about":
             self.currentTab = "about"
             # hide page
             for child in self.main_area.winfo_children():
-                child.pack_forget()
+                child.grid_forget()
             
             if self.cachedFrames["about"] is None:
                 self.cachedFrames["about"] = aboutPage(master=self)
             
             # show about page
             self.main_area.page = self.cachedFrames["about"]
-            self.main_area.page.pack(side="right", fill="both", expand=True)
+            self.main_area.page.grid(row=0,column=1,sticky="nsew")
     
 def on_close(gui):
     try:
