@@ -1,6 +1,6 @@
 <div align="center">
   <img src="Source Code\assets\icon.png" alt="ShimmerOS Icon" width="256" />
-  <img src="Source Code\assets\options.png" alt="Shimmer preview" width="600">
+  <img src="Source Code\assets\options.png" alt="ShimmerOS banner" width="600">
   <h1>ShimmerOS</h1>
   <p>
     ShimmerOS is an operating system based on Windows 11 focused on performance.
