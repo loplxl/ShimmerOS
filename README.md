@@ -24,7 +24,7 @@
   <p>
     ShimmerOS is an operating system based on Windows 11 focused on performance.
     You can join our server here:
-    <a href="https://discord.gg/Tgc4Ka4FQ7">ShimmerOS</a>
+    <a href="https://dsc.gg/tSW5kYuACN">ShimmerOS</a>
   </p>
 
   <p>
