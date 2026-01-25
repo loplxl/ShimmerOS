@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "1.4.0.1"
+version = "1.4.0.2"
 import customtkinter as ctk
 ctk.set_appearance_mode("dark")
 from pages.sidebar import sidebar
