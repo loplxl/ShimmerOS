@@ -1,0 +1,7 @@
+{
+    "description":"Automatically apply and benchmark multiple timer resolution values to find the one best for your hardware.\nFor accurate readings, close all other open applications.",
+    "descriptionsize": 18,
+    "titlesize": 36,
+    "toolname": "Auto_Timer_Resolution.autotimerres",
+    "defaultExists": "yes"
+}

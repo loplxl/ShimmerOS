@@ -10,12 +10,12 @@ class sidebar(ctk.CTkFrame):
         self.icon = ctk.CTkLabel(
             self,
             image=ctk.CTkImage(
-                dark_image=Image.open(resource_path("icon.png")),
-                size=(width/220*128,width/220*128)),
+                dark_image=Image.open(resource_path("assets\\icon.png")),
+                size=(width/220*180,width/220*180)),
             text=""
         )
         self.pack_propagate(False)
-        self.icon.pack(side="top", anchor="n", pady=20)
+        self.icon.pack(side="top", anchor="n")
         
         #7 buttons take up 315 px
         #315 : 650 with 1920

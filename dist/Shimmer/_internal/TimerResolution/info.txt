@@ -1,0 +1,13 @@
+this folder contains:
+
+from amits timer res:
+measuresleep.exe
+setimerresolution.exe
+
+source code available:
+stress.exe
+
+from mingw:
+libgcc_s_dw2-1.dll
+libstdc++-6.dll
+^ needed for stresstest to work

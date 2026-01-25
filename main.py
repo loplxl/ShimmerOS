@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "1.3.2"
+version = "1.4"
 import customtkinter as ctk
 ctk.set_appearance_mode("dark")
 from pages.sidebar import sidebar
@@ -21,20 +21,18 @@ from math import ceil
 createTweaks = False
 #first check if tweaks tab should be made
 drive = getcwd()[:2]
-OSlivionP = join(drive,"/OSlivion/")
-OSOP = join(OSlivionP,"OSO")
-OSOUP = join(OSlivionP,"OSOUpdater")
-quickaccessP = join(OSOP,"quickaccess")
-if not exists(OSlivionP):
-    mkdir(OSlivionP)
-if not exists(OSOP):
-    mkdir(OSOP)
-if not exists(OSOUP):
-    mkdir(OSOUP)
-if not exists(quickaccessP):
-    mkdir(quickaccessP)
+SHIMMERP = join(drive,"/Shimmer/")
+SOFTWAREP = join(SHIMMERP,"Software")
+QA_P = join(SOFTWAREP,"quickaccess")
+TWEAKSP = join(SOFTWAREP,"Tweaks")
+if not exists(SHIMMERP):
+    mkdir(SHIMMERP)
+if not exists(SOFTWAREP):
+    mkdir(SOFTWAREP)
+if not exists(QA_P):
+    mkdir(QA_P)
 
-if exists(drive + r"\OSlivion\OSO\Tweaks"):
+if exists(TWEAKSP):
     createTweaks = True
 def closeAutoUpdater(self):
     print("close auto updater")
@@ -90,11 +88,11 @@ class newGUI(ctk.CTk):
         status = [0,0]
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://api.github.com/repos/loplxl/OSlivionOptions/releases/tags/" + self.CurrentVersion) as resp:
+                async with session.get("https://api.github.com/repos/loplxl/ShimmerOS/releases/tags/" + self.CurrentVersion) as resp:
                     resp.raise_for_status()
                     jsonresp = await resp.json()
                     status[0] = jsonresp["updated_at"]
-                async with session.get("https://api.github.com/repos/loplxl/OSlivionOptions/releases/latest") as resp2:
+                async with session.get("https://api.github.com/repos/loplxl/ShimmerOS/releases/latest") as resp2:
                     resp2.raise_for_status()
                     global jsonresp2
                     jsonresp2 = await resp2.json()
@@ -112,31 +110,31 @@ class newGUI(ctk.CTk):
         if latest <= current:
             log("All up to date!")
             return
-        log("Outdated OSO, updating...")
+        log("Outdated Shimmer, updating...")
         log("Checking if auto updater is installed...")
         
-        OSOUpdater_PATH = join(self.drive,"/Oslivion/OSOUpdater/OSOUpdater.exe")
+        UPD_PATH = join(SOFTWAREP,"ShimmerUpdater.exe")
 
         installed = False
         while not installed:
             install = False
-            if not exists(OSOUpdater_PATH):
+            if not exists(UPD_PATH):
                 log("Auto updater not installed. Installing...")
                 install = True
             else:
                 #check uncorrupted / latest version
                 h256 = sha256()
-                h256.update(open(OSOUpdater_PATH,'rb').read())
+                h256.update(open(UPD_PATH,'rb').read())
                 hash = h256.hexdigest()
                 try:
                     async with aiohttp.ClientSession() as session:
-                        async with session.get("https://api.github.com/repos/loplxl/OSOUpdater/releases/latest") as resp3:
+                        async with session.get("https://api.github.com/repos/loplxl/ShimmerUpdater/releases/latest") as resp3:
                             resp3.raise_for_status()
-                            OSOUresp = await resp3.json()
+                            Uresp = await resp3.json()
                 except Exception as e:
-                    log("Failed to hash OSOUpdater" + e)
+                    log("Failed to hash ShimmerUpdater" + e)
                     return
-                expectedhash = OSOUresp["assets"][0]["digest"][7:]
+                expectedhash = Uresp["assets"][0]["digest"][7:]
                 log("Current: " + hash)
                 log("Expected: " + expectedhash)
                 if str(hash) != str(expectedhash):
@@ -147,19 +145,19 @@ class newGUI(ctk.CTk):
                     break
             if install:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get("https://github.com/loplxl/OSOUpdater/releases/latest/download/OSOUpdater.exe") as resp:
+                    async with session.get("https://github.com/loplxl/ShimmerUpdater/releases/latest/download/ShimmerUpdater.exe") as resp:
                         resp.raise_for_status()
-                        with open(OSOUpdater_PATH, "wb") as f:
+                        with open(UPD_PATH, "wb") as f:
                             async for chunk in resp.content.iter_chunked(8192):
                                 f.write(chunk)
             
             await asyncio.sleep(1) #wait 1s before loop to ensure everything is normal
         log("Auto updater is up to date")
-        Popen(OSOUpdater_PATH.split(" "),creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,close_fds=True)
+        Popen(UPD_PATH.split(" "),creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,close_fds=True)
         on_close(self)
 
     def loadTweaks(self):
-        self.basepath = self.drive + r"\Oslivion\OSO\Tweaks"
+        self.basepath = TWEAKSP
         self.dirs = sorted([d for d in listdir(self.basepath) if isdir(join(self.basepath,d))],key=str.casefold)
 
     def shrink(self,widget,width,size):
@@ -196,7 +194,7 @@ class newGUI(ctk.CTk):
         self.minsize(self.width,self.height)
         print(f"Allowing {self.width}x{self.height}")
         self.geometry(f"{self.width}x{self.height}+100+100") #+100+100 stops the gui from moving each time you open it
-        self.title("OSlivion Options")
+        self.title("Shimmer")
         self.cachedFrames = {
             "home": None,
             "downloads": None,

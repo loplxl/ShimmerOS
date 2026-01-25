@@ -4,8 +4,8 @@ import sys
 from os import getcwd, path, mkdir
 from customtkinter import CTk
 DRIVE = getcwd()[:3]
-LOGS_DIR = path.join(DRIVE, "OSlivion", "OSO", "logging", "logs")
-DEPENDS = [path.join(DRIVE, "OSlivion"), path.join(DRIVE, "OSlivion", "OSO"), path.join(DRIVE, "OSlivion", "OSO", "logging"), LOGS_DIR]
+LOGS_DIR = path.join(DRIVE, "Shimmer", "Software", "logging", "logs")
+DEPENDS = [path.join(DRIVE, "Shimmer"), path.join(DRIVE, "Shimmer", "Software"), path.join(DRIVE, "Shimmer", "Software", "logging"), LOGS_DIR]
 for directory in DEPENDS:
     if not path.exists(directory):
         mkdir(directory)

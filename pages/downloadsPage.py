@@ -6,66 +6,56 @@ import importlib
 #goal:
 #function to delete button, create progressbar and then run the function to get the url
 #asynchronously run another function to download it to allow the rest of the gui to work
-
-from os import getcwd
 import ssl
 from utils import resource_path
 ssl_ctx = ssl.create_default_context(
-    cafile=resource_path("dependencies/cacert.pem")
+    cafile=resource_path("dependencies\\cacert.pem")
 )
 
 class downloadsPage(ctk.CTkFrame):
-    async def uiUpdate(self,progressbar,frac):
-        print("ui update called")
-        progressbar.set(frac)
-    def completeDownload(self,progressbar,appFrame):
-        completeLabel = ctk.CTkLabel(appFrame, text="Complete", text_color="#00ff00", font=ctk.CTkFont(size=20))
-        progressbar.destroy()
+    async def completeDownload(self,progressbar,appFrame,msg="Complete", text_color="#55ff55"):
+        progressbar.grid_forget()
+        completeLabel = ctk.CTkLabel(appFrame, text=msg, text_color=text_color, font=ctk.CTkFont(size=20))
         completeLabel.grid(row=0,column=1,padx=(0,8))
     async def procedureWorker(self,app,btn):
         p = importlib.import_module(f"downloads.{app[1]}")
         await p.getURL(self,btn)
     def download(self,btn,appFrame,name):
-        try:
-            btn.destroy()
-        except Exception as e:
-            print(f"error destroying button\n{e}")
+        btn.grid_forget()
         progressbar = ctk.CTkProgressBar(appFrame,width=75)
         progressbar.set(0)
         app = importlib.import_module(f"downloads.{name}")
         progressbar.grid(row=0,column=1,padx=(0,5),sticky="e")
-        try:
-            url,path = asyncio.run(app.getURL(ssl_ctx))
-        except Exception as e:
-            print(f"Error loading url for {name}\n{e}")
-            return
-        async def uiUpdate(progressbar,frac):
-            try:
-                self.after(0,progressbar.set,frac)
-            except Exception:
-                pass
+
         async def async_download(url,path,progressbar):
             print(f"attempting to download from {url} to {path}")
             lastUpdateFrac = 0
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url,ssl=ssl_ctx) as resp:
-                    resp.raise_for_status()
-                    total = resp.content_length or 0
-                    downloaded = 0
-                    with open(path, "wb") as f:
-                        async for chunk in resp.content.iter_chunked(8192):
-                            f.write(chunk)
-                            downloaded += len(chunk)
-                            if total:
-                                frac = downloaded/total
-                                if frac-lastUpdateFrac >= 0.01: #only update ui every 1% downloaded
-                                    threading.Thread(target=lambda: asyncio.run(uiUpdate(progressbar,frac)), daemon=True).start()
-                                    lastUpdateFrac = frac
-
-            self.after(0,lambda: self.completeDownload(progressbar,progressbar.master))
-        threading.Thread(target=lambda: asyncio.run(async_download(url,path,progressbar)), daemon=True).start() #asynchronous download
-
-
+            async def write(f,chunk):
+                nonlocal lastUpdateFrac
+                f.write(chunk)
+                if total:
+                    frac = downloaded/total
+                    if frac-lastUpdateFrac >= 0.01 and frac <= 1: #only update ui every 1% downloaded
+                        threading.Thread(target=lambda: self.after(0,progressbar.set,frac), daemon=True).start()
+                        lastUpdateFrac = frac
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url,ssl=ssl_ctx) as resp:
+                        resp.raise_for_status()
+                        total = resp.content_length or 0
+                        downloaded = 0
+                        with open(path, "wb") as f:
+                            async for chunk in resp.content.iter_chunked(8192):
+                                downloaded += len(chunk)
+                                await write(f,chunk)
+            except Exception as e:
+                print(f"Error during download: {e}")
+                await self.completeDownload(progressbar,progressbar.master,msg="Error",text_color="#ff5555")
+                return
+            self.after(0,lambda: asyncio.run(self.completeDownload(progressbar,progressbar.master)))
+        async def continuation(url,path):
+            threading.Thread(target=lambda: asyncio.run(async_download(url,path,progressbar)), daemon=True).start()
+        threading.Thread(target=lambda: asyncio.run(app.getURL(ssl_ctx,continuation,progressbar,self.completeDownload)), daemon=True).start()
         
     def __init__(self, master):
         super().__init__(master=master.main_area, fg_color="transparent")
@@ -73,7 +63,7 @@ class downloadsPage(ctk.CTkFrame):
         master.shrink(self.titleBar,round(master.width/1250*1020),32)
         self.titleBar.pack(side="top", fill="x", pady=(0,5))
         downloads = { #category / [name to display,module location,font size]
-            "Oslivion Options quick access": [
+            "Shimmer quick access": [
                 ["Autoruns","quickaccess.autoruns",20],
                 ["GoInterruptPolicy","quickaccess.goip",15],
                 ["$xNSudo","quickaccess.nsudo",22], #$x means that getURL is a procedure, not a function

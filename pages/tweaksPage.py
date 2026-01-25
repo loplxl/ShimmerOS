@@ -1,8 +1,8 @@
 import customtkinter as ctk
 from os.path import join,abspath,exists
 from os import listdir,getcwd
-OSO_DIR = join(getcwd()[2:],"/OSlivion","OSO")
-from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
+SOFTWARE_DIR = join(getcwd()[2:],"/Shimmer","Software")
+from subprocess import Popen
 from time import sleep
 import json
 class tweaksPage(ctk.CTkFrame):
@@ -78,7 +78,7 @@ class tweaksPage(ctk.CTkFrame):
                 requirement = None
             
             requirementNotMet = False
-            if requirement == "nsudo" and not exists(join(OSO_DIR,"quickaccess","NSudo.exe")):
+            if requirement == "nsudo" and not exists(join(SOFTWARE_DIR,"quickaccess","NSudo.exe")):
                 requirementNotMet = True
             localFrame = ctk.CTkFrame(self.dirbar, cursor="hand2")
             localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory.replace("_"," "), font=ctk.CTkFont(size=24))

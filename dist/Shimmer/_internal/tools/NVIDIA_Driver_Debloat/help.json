@@ -1,0 +1,7 @@
+{
+    "description":"Automatically debloat your NVIDIA driver.",
+    "descriptionsize": 19,
+    "titlesize": 36,
+    "toolname": "NVIDIA_Driver_Debloat.nvdd",
+    "defaultExists": "no"
+}

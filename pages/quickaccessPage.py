@@ -15,7 +15,7 @@ class quickaccessPage(ctk.CTkFrame):
         super().__init__(master=master.main_area, fg_color="transparent")
         self.titleBar = ctk.CTkLabel(self, text="Quick Access", font=ctk.CTkFont(size=32,weight="bold"), bg_color="#1d1a23", height=50)
         self.titleBar.pack(side="top", fill="x", pady=(0,5))
-        folderLoc = join(getcwd()[:2] + "\\","Oslivion","OSO","quickaccess")
+        folderLoc = join(getcwd()[:2] + "\\","Shimmer","Software","quickaccess")
         if not exists(folderLoc):
             mkdir(folderLoc)
             downloadedApps = []

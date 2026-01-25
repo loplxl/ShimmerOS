@@ -7,9 +7,9 @@ class homePage(ctk.CTkFrame):
         super().__init__(master=master.main_area, fg_color="transparent")
         self.homePage_image = ctk.CTkLabel(
             self,image=ctk.CTkImage(
-                dark_image=Image.open(resource_path("options.png")),
+                dark_image=Image.open(resource_path("assets\\options.png")),
                 size=(sf*900,sf*315)),text="")
-        self.homePage_label = ctk.CTkLabel(self, text="Welcome to OSlivion Options!\nHere you can get software downloads, tweak management and maybe more in the future.\n\nThanks for using OSlivion and if you run into any issues, please contact us on GitHub.\nMore info on the about page.",
+        self.homePage_label = ctk.CTkLabel(self, text="Welcome to ShimmerOS!\nIn this software, you can get downloads, tweaks and tools.\n\nThanks for using ShimmerOS and if you run into any issues, please contact us on GitHub.\nMore info on the about page.",
             font=ctk.CTkFont(size=23),wraplength=sf*950)
         self.homePage_image.pack(side="top", pady=(20,14))
         self.homePage_label.pack(side="top",padx=10)

@@ -4,10 +4,10 @@
   </h1>
 
   <p>
-    Application for configuring the operating system <a href="https://dsc.gg/oslivion">OSlivion</a>
+    Application for configuring the operating system <a href="https://dsc.gg/Shimmer">ShimmerOS</a>
   </p>
 
-  <img src="options.png" alt="OSlivionOptions preview" width="600">
+  <img src="options.png" alt="Shimmer preview" width="600">
 </div>
 <div>
   <h1 align="center">Features</h1>
@@ -21,7 +21,7 @@
     </p>
     <h2>Tweaks</h2>
     <p>
-      Buttons are provided to apply / undo tweaks from OSlivion
+      Buttons are provided to apply / undo tweaks from ShimmerOS
       <p></p>
       <img width="1919" height="1023" alt="image" src="https://github.com/user-attachments/assets/9f917751-76d9-4eec-a407-03661a0a2e5e" />
     </p>
