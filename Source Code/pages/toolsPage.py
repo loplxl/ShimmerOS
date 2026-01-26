@@ -29,7 +29,7 @@ class toolsPage(ctk.CTkFrame):
                         helpdata = json.load(f)
                         Frame = ctk.CTkFrame(self.toolsFrame, width=475, height=220, corner_radius=20)
                         Frame.pack_propagate(False)  # important to keep height fixed so corners are visible
-                        Label = ctk.CTkLabel(Frame, text=dir.replace("_"," "), pady=6, font=ctk.CTkFont(size=helpdata["titlesize"],weight="bold"))
+                        Label = ctk.CTkLabel(Frame, text=dir.replace("_"," ").lstrip("!"), pady=6, font=ctk.CTkFont(size=helpdata["titlesize"],weight="bold"))
                         Label.pack(side="top")
                         Description = ctk.CTkLabel(Frame, text=helpdata["description"],wraplength=470,bg_color="transparent", font=ctk.CTkFont(size=helpdata["descriptionsize"]), justify="center")
                         Description.pack(side="top", pady=(5,10))

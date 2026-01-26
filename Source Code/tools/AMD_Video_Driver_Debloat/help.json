@@ -1,0 +1,7 @@
+{
+    "description":"Automatically debloat your AMD video driver.",
+    "descriptionsize": 19,
+    "titlesize": 36,
+    "toolname": "AMD_Video_Driver_Debloat.amdvdd",
+    "defaultExists": "no"
+}

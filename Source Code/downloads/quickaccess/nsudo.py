@@ -12,7 +12,7 @@ import zipfile
 ssl_ctx = ssl.create_default_context(cafile=resource_path("dependencies/cacert.pem"))
 async def getURL(self,btn):
     appFrame = btn.master
-    btn.grid_forget()
+    self.after(0,btn.destroy)
     DL_DIR = path.join(gettempdir(),"SHIMMERTEMP")
     if not path.exists(DL_DIR):
         mkdir(DL_DIR)

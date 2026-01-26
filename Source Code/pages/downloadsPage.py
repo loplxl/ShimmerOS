@@ -8,20 +8,25 @@ import importlib
 #asynchronously run another function to download it to allow the rest of the gui to work
 import ssl
 from utils import resource_path
-ssl_ctx = ssl.create_default_context(
-    cafile=resource_path("dependencies\\cacert.pem")
-)
+ssl_ctx = ssl.create_default_context(cafile=resource_path("dependencies\\cacert.pem"))
 
 class downloadsPage(ctk.CTkFrame):
     async def completeDownload(self,progressbar,appFrame,msg="Complete", text_color="#55ff55"):
-        progressbar.grid_forget()
+        self.after(0,progressbar.destroy)
         completeLabel = ctk.CTkLabel(appFrame, text=msg, text_color=text_color, font=ctk.CTkFont(size=20))
         completeLabel.grid(row=0,column=1,padx=(0,8))
+        if msg == "Error":
+            await asyncio.sleep(3)
+            self.after(0,completeLabel.destroy)
+            btn = ctk.CTkButton(appFrame, text="Download", width=round(appFrame.winfo_width()/4), font=ctk.CTkFont(size=16))
+            btn.configure(command=lambda: self.download(btn,appFrame,appFrame.application[1]))
+            self.master.master.shrink(btn,round(appFrame.winfo_width()/4),size=16)
+            btn.grid(row=0,column=1,padx=(0,5),sticky="e")
     async def procedureWorker(self,app,btn):
         p = importlib.import_module(f"downloads.{app[1]}")
         await p.getURL(self,btn)
     def download(self,btn,appFrame,name):
-        btn.grid_forget()
+        self.after(0,btn.destroy)
         progressbar = ctk.CTkProgressBar(appFrame,width=75)
         progressbar.set(0)
         app = importlib.import_module(f"downloads.{name}")
@@ -92,31 +97,52 @@ class downloadsPage(ctk.CTkFrame):
                 ["Yandex","chromium.yandex",20],
                 ["Arc","chromium.arc",22]
             ],
-            "Utilities": [
+            "Gaming": [
                 ["Legcord","utility.legcord",20],
                 ["Discord","utility.discord",20],
                 ["Vencord","utility.vencord",20],
-                ["Steam","utility.steam",22],
-                ["VLC","utility.vlc",22],
-                ["Custom Resolution\nUtility","utility.cru",14],
-                ["MoreClockTool","utility.mct",17],
-                ["CPU-Z","utility.cpuz",22],
-                ["Notepad++","utility.nppp",20],
-                ["Powershell 7","utility.powershell",18],
+                ["Steam","utility.steam",22]
+            ],
+            "Utilities": [
                 ["Mullvad VPN","utility.mullvadvpn",18],
-                ["Teracopy","utility.teracopy",20],
-                ["SoundSwitch","utility.soundswitch",18],
-                ["Lightshot","utility.lightshot",19],
-                ["ShareX","utility.sharex",20],
-                ["Everything\nSearch","utility.everything",16],
-                ["OBS Studio","utility.obs",18],
-                ["Rainmeter","utility.rainmeter",19],
-                ["WinRAR","utility.winrar",20],
                 ["Malwarebytes","utility.mwb",18],
                 ["Bleachbit","utility.bleachbit",19],
+                ["qBittorrent","utility.qbt",18],
+                ["Free Download\nManager","utility.fdm",16],
+                ["CapFrameX","utility.cfx",18]
+            ],
+            "Media": [
+                ["VLC","utility.vlc",22],
+                ["OBS Studio","utility.obs",18],
+                ["SoundSwitch","utility.soundswitch",18],
+                ["Lightshot","utility.lightshot",19],
+                ["ShareX","utility.sharex",20]
+            ],
+            "Customisation": [
+                ["Rainmeter","utility.rainmeter",19],
+                ["Windhawk","utility.windhawk",18],
+                ["StartAllBack","utility.startallback",16]
+            ],
+            "Text Editors": [
+                ["Visual Studio Code","utility.vscode",14],
+                ["Notepad++","utility.nppp",20],
+                ["Sublime Text","utility.sublimetext",18],
+                ["Atom","utility.atom",22]
+            ],
+            "Hardware Tools": [
+                ["CPU-Z","utility.cpuz",22],
+                ["GPU-Z","utility.gpuz",22],
+                ["ASRock Timing\nConfigurator","utility.asrocktc",13],
+                ["Custom Resolution\nUtility","utility.cru",14],
+                ["MoreClockTool","utility.mct",17]
+            ],
+            "System Tools": [
                 ["Process Lasso","utility.processlasso",17],
                 ["Revo Uninstaller","utility.revouninstaller",15],
-                ["Visual Studio Code","utility.vscode",14]
+                ["WinRAR","utility.winrar",20],
+                ["Powershell 7","utility.powershell",18],
+                ["Teracopy","utility.teracopy",20],
+                ["Everything\nSearch","utility.everything",16]
             ]
         }
         shrink = master.shrink
@@ -134,6 +160,7 @@ class downloadsPage(ctk.CTkFrame):
                 row = index // 4 + 1
                 column = index % 4
                 appFrame = ctk.CTkFrame(categoryFrame,height=40,width=w)
+                appFrame.application = app
                 appFrame.grid_propagate(False)
 
                 appFrame.grid_columnconfigure(0, weight=1)  # space for label
@@ -153,5 +180,5 @@ class downloadsPage(ctk.CTkFrame):
                 appNameLabel.grid(row=0,column=0,sticky="ew")
                 appDownloadButton.grid(row=0,column=1,padx=(0,5),sticky="e")
                 appFrame.grid(row=row,column=column,padx=5,pady=5)
-            categoryFrame.pack()
+            categoryFrame.pack(pady=10)
         self.scrollableDlFrame.pack(side="top",fill="both",expand=True)

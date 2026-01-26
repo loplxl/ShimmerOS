@@ -9,7 +9,7 @@ import zipfile
 ssl_ctx = ssl.create_default_context(cafile=resource_path("dependencies/cacert.pem"))
 async def getURL(self,btn):
     appFrame = btn.master
-    btn.grid_forget()
+    self.after(0,btn.destroy)
     progressbar = ctk.CTkProgressBar(appFrame,width=75)
     progressbar.set(0)
     progressbar.grid(row=0,column=1,padx=(0,5),sticky="e")

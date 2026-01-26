@@ -190,7 +190,7 @@ def confirm(minres,maxres,interval,samples,btn,label):
 
 def error(btn,msg):
     btn.configure(text=msg)
-    btn.master.after(1500, lambda: btn.configure(text="Confirm"))
+    btn.master.after(3000, lambda: btn.configure(text="Confirm"))
 
 def heartbeat(toplevel: ctk.CTkToplevel, stopflag):
     while True:
@@ -208,12 +208,23 @@ def heartbeat(toplevel: ctk.CTkToplevel, stopflag):
 
 def parseAndStart(minres,maxres,interval,samples,btn):
     try:
-        int(minres.get())
-        int(maxres.get())
-        int(interval.get())
-        int(samples.get())
+        min = int(minres.get())
+        max = int(maxres.get())
+        iv = int(interval.get())
+        sam = int(samples.get())
     except Exception:
         error(btn,"Integers only.")
         return
-    btn.destroy()
-    btn.master.master.timerresthread.start()
+    if iv <= 0:
+        error(btn,"Interval must be greater than 0.")
+    elif sam <= 0:
+        error(btn,"Samples must be greater than 0.")
+    elif min >= max:
+        error(btn,"Minimum must be less than maximum.")
+    elif min < 5000:
+        error(btn,"Minimum must be greater than 4999.")
+    elif max > 15625:
+        error(btn,"Maximum must be less than 15626.")
+    else:
+        btn.destroy()
+        btn.master.master.timerresthread.start()
