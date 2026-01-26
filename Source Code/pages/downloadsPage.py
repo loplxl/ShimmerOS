@@ -134,7 +134,8 @@ class downloadsPage(ctk.CTkFrame):
                 ["GPU-Z","utility.gpuz",22],
                 ["ASRock Timing\nConfigurator","utility.asrocktc",13],
                 ["Custom Resolution\nUtility","utility.cru",14],
-                ["MoreClockTool","utility.mct",17]
+                ["MoreClockTool","utility.mct",17],
+                ["Display Driver\nUninstaller","utility.ddu",16]
             ],
             "System Tools": [
                 ["Process Lasso","utility.processlasso",17],
