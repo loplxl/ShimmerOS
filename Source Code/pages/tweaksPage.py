@@ -1,10 +1,21 @@
 import customtkinter as ctk
-from os.path import join,abspath,exists
+from os.path import join,abspath,exists,isdir
 from os import listdir,getcwd
 SOFTWARE_DIR = join(getcwd()[2:],"/Shimmer","Software")
-from subprocess import Popen
+from subprocess import Popen,check_output
 from time import sleep
+import threading
 import json
+
+cpuman = check_output("wmic cpu get Manufacturer",shell=True)
+manufacturer = cpuman.decode()
+CPUManufacturer = "unknown"
+if "amd" in manufacturer.lower():
+    CPUManufacturer = "amd"
+elif "intel" in manufacturer.lower():
+    CPUManufacturer = "intel"
+
+
 class tweaksPage(ctk.CTkFrame):
     def rmbBind(self,widget,description,directory):
         widget.bind("<Button-3>",lambda e: self.helpbox(description,directory))
@@ -58,10 +69,48 @@ class tweaksPage(ctk.CTkFrame):
         c=0
         while not master.dirs or master.dirs == "loading":
             sleep(0.01)
+        
+        bpath = self.master.master.basepath
+        global DATA_DIR
+        DATA_DIR = join(SOFTWARE_DIR,"tweakdata.json")
+        global data
+        if not exists(DATA_DIR):
+            print("Creating tweak data")
+            with open(DATA_DIR,'w') as f:
+                data = {
+                    "Animations_Support": 0,
+                    "Bluetooth_Support": 1,
+                    "Clipboard_History": 0,
+                    "Core_Isolation": 0,
+                    "DCOM": 1,
+                    "Filesystem_Encryption": 0,
+                    "Force_FSE": 0,
+                    "MPO": 1,
+                    "Hyper-V": 0,
+                    "Intel_TSX": 1,
+                    "Internet_Optimizations": 0,
+                    "NoLazyMode": 0,
+                    "Notification_Center": 1,
+                    "Notifications": 0,
+                    "Power_Saving": 0,
+                    "Printing_Support": 0,
+                    "Serial_Port": 1,
+                    "Start_Menu": 1,
+                    "SystemProfile_Tweaks": 0,
+                    "Transparency_Effects": 0,
+                    "UAC": 0,
+                    "VPN_Support": 1,
+                    "Wi-Fi_Support": 1,
+                    "Windows_Update": 1
+                }
+                json.dump(data,f,indent=4)
+        else:
+            with open(DATA_DIR,'r') as f:
+                data = json.load(f)
         for directory in master.dirs:
-            filesdir = join(self.master.master.basepath,directory)
-            print("Loading " + str(filesdir))
+            filesdir = join(bpath,directory)
             files = listdir(filesdir)
+            print("Loading " + str(filesdir))
 
             try:
                 with open(join(filesdir,"help.json"),'r') as f:
@@ -70,72 +119,97 @@ class tweaksPage(ctk.CTkFrame):
                     file = helpdata["target"]
             except Exception as e:
                 file = str(e)
-
             try:
                 with open(join(filesdir,"help.json"),'r') as f:
                     requirement = helpdata["requirement"]
             except Exception as e:
                 requirement = None
-            
+            try:
+                with open(join(filesdir,"help.json"),'r') as f:
+                    CPUReq = helpdata["cpu"]
+            except Exception as e:
+                CPUReq = "none"
+            if not (CPUReq == "none" or CPUReq == CPUManufacturer):
+                continue
+
             requirementNotMet = False
             if requirement == "nsudo" and not exists(join(SOFTWARE_DIR,"quickaccess","NSudo.exe")):
                 requirementNotMet = True
-            localFrame = ctk.CTkFrame(self.dirbar, cursor="hand2")
+            localFrame = ctk.CTkFrame(self.dirbar,cursor="hand2")
             localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory.replace("_"," "), font=ctk.CTkFont(size=24))
             localFrame.nameLabel.pack(side="left", padx=[10,0], pady=10)
-            if requirementNotMet:
-                localFrame.nameLabel.configure(text=f"not met requirement: {requirement} - download it in downloads page, then reopen app", font=ctk.CTkFont(size=13))
+            if requirementNotMet: 
+                localFrame.nameLabel.configure(text=f"not met requirement for {directory.replace("_"," ")}: {requirement} download it in downloads page, then reopen app", font=ctk.CTkFont(size=20))
             else:
                 if "on.bat" in files and "off.bat" in files:
-                    localFrame.onButton = ctk.CTkButton(localFrame, text="ON", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"on",f), width=50, font=ctk.CTkFont(size=16))
-                    localFrame.offButton = ctk.CTkButton(localFrame, text="OFF", fg_color="#784343", hover_color="#683333", command=lambda d=directory, f=localFrame: self.ONOFFtweakClicked(d,"off",f), width=50, font=ctk.CTkFont(size=16))
-                    localFrame.offButton.pack(side="right",padx=8)
+                    localFrame.switchvar = ctk.StringVar()
+                    localFrame.switch = ctk.CTkSwitch(localFrame,width=116,text=None,variable=localFrame.switchvar,onvalue="on",offvalue="off",progress_color="transparent",
+                                command=lambda d=directory, f=localFrame: threading.Thread(target=self.ONOFFtweakClicked,args=(d,f),daemon=True).start())
+                    try:
+                        s = data[directory]
+                        if s:
+                            localFrame.switch.select()
+                            localFrame.switch.configure(text="Enabled",fg_color="#55bb55",text_color="#55ff55",text_color_disabled="#55ff55")
+                        else:
+                            localFrame.switch.configure(text="Disabled",fg_color="#3865a8",text_color="#5599ff",text_color_disabled="#5599ff")
+                    except Exception:
+                        print(f"Stored tweaks data does not contain information on {directory}.")
+                        localFrame.switch.configure(text="Unset",fg_color="#bb5555",text_color="#ff5555",text_color_disabled="#ff5555")
+                    localFrame.switch.pack(side="right",padx=(0,8))
+                    self.rmbBind(localFrame,description,join(filesdir,file))
+                elif "action.bat" in files:
+                    localFrame.onButton = ctk.CTkButton(localFrame, text="Apply", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.SingleBattweakclicked(d,f), width=116, font=ctk.CTkFont(size=16))
                     localFrame.onButton.pack(side="right",padx=8)
                     self.rmbBind(localFrame,description,join(filesdir,file))
                 else:
-                    if "action.bat" in files:
-                        localFrame.onButton = ctk.CTkButton(localFrame, text="Apply", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.SingleBattweakclicked(d,f), width=116, font=ctk.CTkFont(size=16))
-                        localFrame.onButton.pack(side="right",padx=8)
-                        self.rmbBind(localFrame,description,join(filesdir,file))
-                    elif file.endswith(".reg"):
-                        localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#436A78", hover_color="#335A68", command=lambda d=join(filesdir,file), f=localFrame: self.regTweakClicked(d,f))
-                        localFrame.regButton.pack(side="right",padx=8)
-                        self.rmbBind(localFrame,description,join(filesdir,file))
-                    elif file.endswith(".ps1"):
-                        localFrame.regButton = ctk.CTkButton(localFrame, text=file.replace("_"," "), fg_color="#574378", hover_color="#473368", command=lambda d=join(filesdir,file), f=localFrame: self.ps1TweakClicked(d,f))
-                        localFrame.regButton.pack(side="right",padx=8)
-                        self.rmbBind(localFrame,description,join(filesdir,file))
-                    else:
-                        localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
-                        localFrame.errorLabel.pack(side="right",padx=8)
+                    localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
+                    localFrame.errorLabel.pack(side="right",padx=8)
             localFrame.grid(row=r, column=c, sticky="nsew", padx=3, pady=6)
             self.dirbar.grid_columnconfigure(c, weight=1)
-            master.shrink(localFrame.nameLabel, round((master.width/1250*1030-141)/2) - 116, 30)
+            if not requirementNotMet:
+                master.shrink(localFrame.nameLabel, round((master.width/1250*1030-141)/2) - 116, 30)
+            else:
+                master.shrink(localFrame.nameLabel, round((master.width/1250*1030)/2), 30)
             c += 1
             if c > 1:
                 c = 0
                 r += 1
 
-        
+    def colourlabel(self,proc,label,colour):
+        proc.wait()
+        self.after(0,lambda: label.configure(text_color=colour))
+        label.master.switch.configure(state="normal")
     
-    def ONOFFtweakClicked(self,directory,state,frame):
+    def ONOFFtweakClicked(self,directory,frame):
+        frame.switch.configure(state="disabled")
+        state = frame.switchvar.get()
+        if state == "on":
+            frame.switch.configure(text="Enabled",fg_color="#55bb55",text_color="#55ff55",text_color_disabled="#55ff55")
+            with open(DATA_DIR,'w') as f:
+                data[directory] = 1
+                json.dump(data,f,indent=4)
+        else:
+            frame.switch.configure(text="Disabled",fg_color="#3865a8",text_color="#5599ff",text_color_disabled="#5599ff")
+            with open(DATA_DIR,'w') as f:
+                data[directory] = 0
+                json.dump(data,f,indent=4)
         path = abspath(join(self.master.master.basepath, directory, f"{state}.bat"))
         print(f"Running |{path}|.")
-        Popen([f'{path}'], shell=True)
-        frame.nameLabel.configure(text_color="#" + ("aaff" if state == "on" else "ffaa") + "aa") #aaffaa for on, #ffaaaa for off
+        self.colourlabel(Popen([f'{path}'], shell=True),frame.nameLabel,("#aaffaa"))
     def regTweakClicked(self,directory,frame):
         print(f"Running |{directory}|.")
-        Popen(["regedit","/s",directory], shell=True)
+        proc = Popen(["regedit","/s",directory], shell=True)
+        proc.wait()
         frame.nameLabel.configure(text_color="#aaffaa")
     def ps1TweakClicked(self,directory,frame):
         print(f"Running |{directory}|.")
         cmd = ["powershell.exe", '-ExecutionPolicy', 'Unrestricted', directory]
         proc = Popen(cmd, shell=True)
-        print(proc.returncode)
+        proc.wait()
         frame.nameLabel.configure(text_color="#aaffaa")
     def SingleBattweakclicked(self,directory,frame):
         path = abspath(join(self.master.master.basepath, directory, f"action.bat"))
         print(f"Running |{path}|.")
-        Popen([f'{path}'], shell=True)
+        proc = Popen([f'{path}'], shell=True)
+        proc.wait()
         frame.nameLabel.configure(text_color="#aaffaa")
-        

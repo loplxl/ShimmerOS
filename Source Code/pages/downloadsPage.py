@@ -1,33 +1,113 @@
+downloads = { #category / [name to display,module location,font size]
+    "Shimmer quick access": [
+        ["Autoruns","quickaccess.autoruns",20],
+        ["GoInterruptPolicy","quickaccess.goip",15],
+        ["$xNSudo","quickaccess.nsudo",22], #$x means that getURL is a procedure, not a function
+        ["$xAuto Gpu Affinity","quickaccess.aga",14]
+    ],
+    "Firefox based browsers": [
+        ["⭐ Tor","firefox.tor",22],
+        ["⭐ Mullvad","firefox.mullvad",20],
+        ["Zen","firefox.zen",22],
+        ["Waterfox","firefox.waterfox",20],
+        ["⭐ Firefox","firefox.firefox",20],
+        ["Librewolf","firefox.librewolf",20],
+        ["Floorp","firefox.floorp",20]
+    ],
+    "Chromium based browsers": [
+        ["Google Chrome","chromium.chrome",18],
+        ["⭐ Brave","chromium.brave",20],
+        ["Vivaldi","chromium.vivaldi",20],
+        ["Ungoogled\nChromium","chromium.ungoogled",14],
+        ["⭐ Helium","chromium.helium",20],
+        ["SRWare Iron","chromium.swiron",18],
+        ["Comodo Dragon","chromium.comododragon",16],
+        ["Epic Privacy\nBrowser","chromium.epic",14],
+        ["Opera GX","chromium.operagx",18],
+        ["Opera","chromium.opera",20],
+        ["Yandex","chromium.yandex",20],
+        ["Arc","chromium.arc",22]
+    ],
+    "Gaming": [
+        ["Legcord","utility.legcord",20],
+        ["Discord","utility.discord",20],
+        ["Vencord","utility.vencord",20],
+        ["Steam","utility.steam",22],
+        ["BakkesMod","utility.bakkesmod",20]
+    ],
+    "Utilities": [
+        ["Mullvad VPN","utility.mullvadvpn",18],
+        ["Malwarebytes","utility.mwb",18],
+        ["Bleachbit","utility.bleachbit",19],
+        ["qBittorrent","utility.qbt",18],
+        ["Free Download\nManager","utility.fdm",16],
+        ["CapFrameX","utility.cfx",18]
+    ],
+    "Media": [
+        ["VLC","utility.vlc",22],
+        ["OBS Studio","utility.obs",18],
+        ["SoundSwitch","utility.soundswitch",18],
+        ["Lightshot","utility.lightshot",19],
+        ["ShareX","utility.sharex",20]
+    ],
+    "Customisation": [
+        ["Rainmeter","utility.rainmeter",19],
+        ["Windhawk","utility.windhawk",18],
+        ["StartAllBack","utility.startallback",16]
+    ],
+    "Text Editors": [
+        ["Visual Studio Code","utility.vscode",14],
+        ["Notepad++","utility.nppp",20],
+        ["Sublime Text","utility.sublimetext",18],
+        ["Atom","utility.atom",22]
+    ],
+    "Hardware Tools": [
+        ["CPU-Z","utility.cpuz",22],
+        ["GPU-Z","utility.gpuz",22],
+        ["ASRock Timing\nConfigurator","utility.asrocktc",13],
+        ["Custom Resolution\nUtility","utility.cru",14],
+        ["MoreClockTool","utility.mct",17],
+        ["Display Driver\nUninstaller","utility.ddu",16]
+    ],
+    "System Tools": [
+        ["Process Lasso","utility.processlasso",17],
+        ["Revo Uninstaller","utility.revouninstaller",15],
+        ["WinRAR","utility.winrar",20],
+        ["Powershell 7","utility.powershell",18],
+        ["Teracopy","utility.teracopy",20],
+        ["Everything\nSearch","utility.everything",16]
+    ]
+}
+
 import customtkinter as ctk
 import threading
 import asyncio
 import aiohttp
 import importlib
-#goal:
-#function to delete button, create progressbar and then run the function to get the url
-#asynchronously run another function to download it to allow the rest of the gui to work
 import ssl
 from utils import resource_path
 ssl_ctx = ssl.create_default_context(cafile=resource_path("dependencies\\cacert.pem"))
 
 class downloadsPage(ctk.CTkFrame):
     async def completeDownload(self,progressbar,appFrame,msg="Complete", text_color="#55ff55"):
-        self.after(0,progressbar.destroy)
         completeLabel = ctk.CTkLabel(appFrame, text=msg, text_color=text_color, font=ctk.CTkFont(size=20))
+        self.master.master.shrink(completeLabel,progressbar.winfo_width(),20)
+        self.after(0,progressbar.destroy)
         completeLabel.grid(row=0,column=1,padx=(0,8))
         if msg == "Error":
             await asyncio.sleep(3)
             self.after(0,completeLabel.destroy)
+            print(f"attempting to resummon {appFrame.application[1]}")
             btn = ctk.CTkButton(appFrame, text="Download", width=round(appFrame.winfo_width()/4), font=ctk.CTkFont(size=16))
             btn.configure(command=lambda: self.download(btn,appFrame,appFrame.application[1]))
             self.master.master.shrink(btn,round(appFrame.winfo_width()/4),size=16)
             btn.grid(row=0,column=1,padx=(0,5),sticky="e")
     async def procedureWorker(self,app,btn):
         p = importlib.import_module(f"downloads.{app[1]}")
-        await p.getURL(self,btn)
+        await p.getURL(self,btn,app[1])
     def download(self,btn,appFrame,name):
+        progressbar = ctk.CTkProgressBar(appFrame,width=btn.winfo_width())
         self.after(0,btn.destroy)
-        progressbar = ctk.CTkProgressBar(appFrame,width=75)
         progressbar.set(0)
         app = importlib.import_module(f"downloads.{name}")
         progressbar.grid(row=0,column=1,padx=(0,5),sticky="e")
@@ -67,85 +147,6 @@ class downloadsPage(ctk.CTkFrame):
         self.titleBar = ctk.CTkLabel(self, text="Downloads (downloads go to downloads folder)", font=ctk.CTkFont(size=32,weight="bold"), bg_color="#1d1a23", height=50)
         master.shrink(self.titleBar,round(master.width/1250*1020),32)
         self.titleBar.pack(side="top", fill="x", pady=(0,5))
-        downloads = { #category / [name to display,module location,font size]
-            "Shimmer quick access": [
-                ["Autoruns","quickaccess.autoruns",20],
-                ["GoInterruptPolicy","quickaccess.goip",15],
-                ["$xNSudo","quickaccess.nsudo",22], #$x means that getURL is a procedure, not a function
-                ["$xAuto Gpu Affinity","quickaccess.aga",14]
-            ],
-            "Firefox based browsers": [
-                ["⭐ Tor","firefox.tor",22],
-                ["⭐ Mullvad","firefox.mullvad",20],
-                ["Zen","firefox.zen",22],
-                ["Waterfox","firefox.waterfox",20],
-                ["⭐ Firefox","firefox.firefox",20],
-                ["Librewolf","firefox.librewolf",20],
-                ["Floorp","firefox.floorp",20]
-            ],
-            "Chromium based browsers": [
-                ["Google Chrome","chromium.chrome",18],
-                ["⭐ Brave","chromium.brave",20],
-                ["Vivaldi","chromium.vivaldi",20],
-                ["Ungoogled\nChromium","chromium.ungoogled",14],
-                ["⭐ Helium","chromium.helium",20],
-                ["SRWare Iron","chromium.swiron",18],
-                ["Comodo Dragon","chromium.comododragon",16],
-                ["Epic Privacy\nBrowser","chromium.epic",14],
-                ["Opera GX","chromium.operagx",18],
-                ["Opera","chromium.opera",20],
-                ["Yandex","chromium.yandex",20],
-                ["Arc","chromium.arc",22]
-            ],
-            "Gaming": [
-                ["Legcord","utility.legcord",20],
-                ["Discord","utility.discord",20],
-                ["Vencord","utility.vencord",20],
-                ["Steam","utility.steam",22]
-            ],
-            "Utilities": [
-                ["Mullvad VPN","utility.mullvadvpn",18],
-                ["Malwarebytes","utility.mwb",18],
-                ["Bleachbit","utility.bleachbit",19],
-                ["qBittorrent","utility.qbt",18],
-                ["Free Download\nManager","utility.fdm",16],
-                ["CapFrameX","utility.cfx",18]
-            ],
-            "Media": [
-                ["VLC","utility.vlc",22],
-                ["OBS Studio","utility.obs",18],
-                ["SoundSwitch","utility.soundswitch",18],
-                ["Lightshot","utility.lightshot",19],
-                ["ShareX","utility.sharex",20]
-            ],
-            "Customisation": [
-                ["Rainmeter","utility.rainmeter",19],
-                ["Windhawk","utility.windhawk",18],
-                ["StartAllBack","utility.startallback",16]
-            ],
-            "Text Editors": [
-                ["Visual Studio Code","utility.vscode",14],
-                ["Notepad++","utility.nppp",20],
-                ["Sublime Text","utility.sublimetext",18],
-                ["Atom","utility.atom",22]
-            ],
-            "Hardware Tools": [
-                ["CPU-Z","utility.cpuz",22],
-                ["GPU-Z","utility.gpuz",22],
-                ["ASRock Timing\nConfigurator","utility.asrocktc",13],
-                ["Custom Resolution\nUtility","utility.cru",14],
-                ["MoreClockTool","utility.mct",17],
-                ["Display Driver\nUninstaller","utility.ddu",16]
-            ],
-            "System Tools": [
-                ["Process Lasso","utility.processlasso",17],
-                ["Revo Uninstaller","utility.revouninstaller",15],
-                ["WinRAR","utility.winrar",20],
-                ["Powershell 7","utility.powershell",18],
-                ["Teracopy","utility.teracopy",20],
-                ["Everything\nSearch","utility.everything",16]
-            ]
-        }
         shrink = master.shrink
 
         self.scrollableDlFrame = ctk.CTkScrollableFrame(self, fg_color="#201d26")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "1.4.1"
+version = "1.5"
 import customtkinter as ctk
 ctk.set_appearance_mode("dark")
 from pages.sidebar import sidebar
@@ -18,8 +18,6 @@ from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP, CREATE
 from os import listdir,getcwd,mkdir
 from os.path import isdir,join,exists
 from math import ceil
-createTweaks = False
-#first check if tweaks tab should be made
 drive = getcwd()[:2]
 SHIMMERP = join(drive,"/Shimmer/")
 SOFTWAREP = join(SHIMMERP,"Software")
@@ -32,12 +30,14 @@ if not exists(SOFTWAREP):
 if not exists(QA_P):
     mkdir(QA_P)
 
+createTweaks = False
 if exists(TWEAKSP):
     createTweaks = True
-def closeAutoUpdater(self):
-    print("close auto updater")
-    self.updateTL.destroy()
+
 class newGUI(ctk.CTk):
+    def closeAutoUpdater(self):
+        print("close auto updater")
+        self.updateTL.destroy()
     async def showlogs(self):
         createnewtl = False
         try:
@@ -67,7 +67,7 @@ class newGUI(ctk.CTk):
         except Exception as e:
             print("No updater TL, creating...")
             self.updateTL = ctk.CTkToplevel(self, fg_color="#201d26")
-            self.updateTL.protocol("WM_DELETE_WINDOW", lambda: closeAutoUpdater(self))
+            self.updateTL.protocol("WM_DELETE_WINDOW", self.closeAutoUpdater)
             self.updateTL.geometry("400x200")
             self.updateTL.title("Check for updates")
 

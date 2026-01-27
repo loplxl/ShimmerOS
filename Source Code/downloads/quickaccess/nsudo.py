@@ -10,17 +10,16 @@ from shutil import copy2,rmtree
 from utils import resource_path
 import zipfile
 ssl_ctx = ssl.create_default_context(cafile=resource_path("dependencies/cacert.pem"))
-async def getURL(self,btn):
-    appFrame = btn.master
-    self.after(0,btn.destroy)
+async def getURL(self,btn,modulename):
     DL_DIR = path.join(gettempdir(),"SHIMMERTEMP")
     if not path.exists(DL_DIR):
         mkdir(DL_DIR)
-    progressbar = ctk.CTkProgressBar(appFrame,width=75)
+    appFrame = btn.master
+    appFrame.application = [None,modulename]
+    progressbar = ctk.CTkProgressBar(appFrame,width=btn.winfo_width())
+    self.after(0,btn.destroy)
     progressbar.set(0)
     progressbar.grid(row=0,column=1,padx=(0,5),sticky="e")
-    async def uiUpdate(progressbar,frac):
-        self.after(0,progressbar.set,frac)
     async def async_download(url,DLpath,progressbar):
         print(f"attempting to download from {url} to {DLpath}")
         lastUpdateFrac = 0
@@ -45,11 +44,21 @@ async def getURL(self,btn):
         except Exception as e:
             print(f"Error during download: {e}")
             completeLabel = ctk.CTkLabel(appFrame, text="Error", text_color="#ff5555", font=ctk.CTkFont(size=20))
-            progressbar.grid_forget()
+            self.master.master.shrink(completeLabel,progressbar.winfo_width(),20)
+            self.after(0,progressbar.destroy)
             completeLabel.grid(row=0,column=1,padx=(0,8))
+            
+            await asyncio.sleep(3)
+            self.after(0,completeLabel.destroy)
+            print(f"attempting to resummon {appFrame.application}")
+            btn = ctk.CTkButton(appFrame, text="Download", width=round(appFrame.winfo_width()/4), font=ctk.CTkFont(size=16))
+            btn.configure(command=lambda: asyncio.run(self.procedureWorker(appFrame.application,btn)))
+            self.master.master.shrink(btn,round(appFrame.winfo_width()/4),size=16)
+            btn.grid(row=0,column=1,padx=(0,5),sticky="e")
             return
         completeLabel = ctk.CTkLabel(appFrame, text="Complete", text_color="#55ff55", font=ctk.CTkFont(size=20))
-        progressbar.grid_forget()
+        self.master.master.shrink(completeLabel,progressbar.winfo_width(),20)
+        self.after(0,progressbar.destroy)
         completeLabel.grid(row=0,column=1,padx=(0,8))
         with zipfile.ZipFile(DLpath, 'r') as zip_ref:
             outputloc = path.join(DL_DIR,"nsudo")
