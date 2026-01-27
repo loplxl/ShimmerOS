@@ -8,13 +8,12 @@ import threading
 import json
 
 cpuman = check_output("wmic cpu get Manufacturer",shell=True)
-manufacturer = cpuman.decode()
-CPUManufacturer = "unknown"
-if "amd" in manufacturer.lower():
-    CPUManufacturer = "amd"
-elif "intel" in manufacturer.lower():
-    CPUManufacturer = "intel"
+Cmanufacturer = cpuman.decode()
+CPUManufacturer = "amd" if ("amd" in Cmanufacturer.lower()) else "intel" if ("intel" in Cmanufacturer.lower()) else "unknown"
 
+gpuman = check_output("wmic path win32_videocontroller get name",shell=True)
+Gmanufacturer = gpuman.decode()
+GPUManufacturer = "amd" if ("amd" in Gmanufacturer.lower()) else "intel" if ("intel" in Gmanufacturer.lower()) else "nvidia" if ("nvidia" in Gmanufacturer.lower()) else "unknown"
 
 class tweaksPage(ctk.CTkFrame):
     def rmbBind(self,widget,description,directory):
@@ -130,6 +129,14 @@ class tweaksPage(ctk.CTkFrame):
             except Exception as e:
                 CPUReq = "none"
             if not (CPUReq == "none" or CPUReq == CPUManufacturer):
+                continue
+
+            try:
+                with open(join(filesdir,"help.json"),'r') as f:
+                    GPUReq = helpdata["gpu"]
+            except Exception as e:
+                GPUReq = "none"
+            if not (GPUReq == "none" or GPUReq == GPUManufacturer):
                 continue
 
             requirementNotMet = False
