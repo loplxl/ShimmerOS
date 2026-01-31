@@ -18,49 +18,72 @@ def stopatr(stress,label,bestlabel,NtSetTimerResolution):
     stress.terminate()
     label.configure(text="Done, trying to apply...")
     saveTRESShortcut(bestres)
-    label.configure(text=("Successfully applied!" if exists(shortcut_location) else f"Failed, manually apply {bestres}. Guide in Discord."))
+    label.configure(text=(f"Successfully applied {bestres}!" if exists(shortcut_location) else f"Failed, manually apply {bestres}. Guide in Discord."))
     bestlabel.destroy()
     NtSetTimerResolution(0, False, ctypes.wintypes.ULONG()) #disable temporary timer res
     Popen([r"C:\Users\lop\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\SetTimerResolution.exe.lnk"],shell=True)
+
 
 lastres = 5000
 bestdelta = 1000
 bestres = -1
 import ctypes
-def handleNtSetTimerResolution(minres,maxres,interval,samples,label,stress):
+ntdll = ctypes.WinDLL("ntdll")
+NtSetTimerResolution = ntdll.NtSetTimerResolution
+NtSetTimerResolution.argtypes = [ctypes.wintypes.ULONG,ctypes.wintypes.BOOLEAN,ctypes.POINTER(ctypes.wintypes.ULONG)]
+results = {}
+def benchmark(res,samples,label):
+    global results
+    global bestdelta
+    global lastres
+    global bestres
+    NtSetTimerResolution(res, True, ctypes.wintypes.ULONG())
+    label.configure(text=f"Benchmarking: {res}")
+    with Popen((resource_path("TimerResolution\\MeasureSleep").split(" ") + ["--samples",samples]),stdout=PIPE,text=True,creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS | HIGH_PRIORITY_CLASS) as MeasureSleep:
+        label.master.master.openSubprocesses.append(MeasureSleep)
+        output = MeasureSleep.stdout.read()
+        label.master.master.openSubprocesses.remove(MeasureSleep)
+    print(output)
+    match = re.search(r"Max: (\d+\.\d+)",output)
+    if match:
+        r = float(match.group(1))
+        results[res] = r
+        if r < bestdelta:
+            bestdelta = r
+            bestres = res
+
+
+
+
+def handleNtSetTimerResolution(minres,maxres,samples,label,stress):
+    global results
     global bestdelta
     global lastres
     global bestres
     try:
         Popen(["taskkill","/f","/im","SetTimerResolution.exe"],creationflags=CREATE_NO_WINDOW)
-        ntdll = ctypes.WinDLL("ntdll")
-        NtSetTimerResolution = ntdll.NtSetTimerResolution
-        NtSetTimerResolution.argtypes = [ctypes.wintypes.ULONG,ctypes.wintypes.BOOLEAN,ctypes.POINTER(ctypes.wintypes.ULONG)]
         bestlabel = ctk.CTkLabel(label.master, fg_color="transparent", text="")
         bestlabel.pack()
         stopbtn = ctk.CTkButton(label.master,text="Apply current best",fg_color="#ff3333",hover_color="#ff6666",text_color="#ffffff",command=lambda: userstopatr(stress,label,bestlabel,NtSetTimerResolution))
         stopbtn.pack(pady=5)
-        for res in range(minres,maxres+1,interval):
-            if not label.master.winfo_exists(): #toplevel is gone
-                return
-            NtSetTimerResolution(res, True, ctypes.wintypes.ULONG())
-            label.configure(text=f"Benchmarking: {res}")
-            with Popen((resource_path("TimerResolution\\MeasureSleep").split(" ") + ["--samples",samples]),stdout=PIPE,text=True,creationflags=CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS | HIGH_PRIORITY_CLASS) as MeasureSleep:
-                label.master.master.openSubprocesses.append(MeasureSleep)
-                output = MeasureSleep.stdout.read()
-                label.master.master.openSubprocesses.remove(MeasureSleep)
-            print(output)
-            match = re.search(r"Max: (\d+\.\d+)",output)
-            if match:
-                max = float(match.group(1))
-                if max < bestdelta:
-                    bestdelta = max
-                    bestres = res
+        for res in range(minres,maxres+1,5):
             if label.master.winfo_exists():
-                bestlabel.configure(text=f"Best: {bestres} {bestdelta}")
+                bestlabel.configure(text=f"Best: {bestres} {bestdelta}" if bestres!=-1 else "")
             else:
                 stress.terminate()
                 raise Exception("user stopped timer res")
+            benchmark(res,samples,label)
+        for k,v in results.items():
+            if v < bestdelta:
+                bestdelta = v
+                bestres = k
+        results = {}
+        for res in range(bestres-3,bestres+3):
+            benchmark(res,samples,label)
+        for k,v in results.items():
+            if v < bestdelta:
+                bestdelta = v
+                bestres = k
         stopatr(stress,label,bestlabel,NtSetTimerResolution)
     except Exception as e:
         print(f"error during timer res\n{str(e)}")
@@ -112,13 +135,12 @@ def apply(self):
     if createnewtl:
         self.ATRtoplevel = ctk.CTkToplevel(self, fg_color="#201d26")
         self.ATRtoplevel.protocol("WM_DELETE_WINDOW", lambda: on_close(self))
-        self.ATRtoplevel.geometry("600x200")
+        self.ATRtoplevel.geometry("500x200")
         self.ATRtoplevel.title("Apply Timer Resolution")
 
         #create a frame to hold entries, then pack the frame and submit button
         minres = StringVar(value=5000)
         maxres = StringVar(value=5100)
-        interval = StringVar(value=5)
         samples = StringVar(value=50)
 
 
@@ -143,25 +165,16 @@ def apply(self):
         maxresFrame.grid(row=0,column=1)
 
 
-        intervalFrame = ctk.CTkFrame(self.varsFrame, fg_color="transparent", width=120)
-        intervalLabel = ctk.CTkLabel(intervalFrame, text="Interval")
-        intervalEntry = ctk.CTkEntry(intervalFrame, textvariable=interval, justify="center")
-
-        intervalLabel.pack()
-        intervalEntry.pack()
-        intervalFrame.grid(row=0,column=2)
-
-
         samplesFrame = ctk.CTkFrame(self.varsFrame, fg_color="transparent", width=120)
         samplesLabel = ctk.CTkLabel(samplesFrame, text="Samples")
         samplesEntry = ctk.CTkEntry(samplesFrame, textvariable=samples, justify="center")
 
         samplesLabel.pack()
         samplesEntry.pack()
-        samplesFrame.grid(row=0,column=3)
+        samplesFrame.grid(row=0,column=2)
 
         
-        for i in range(4):
+        for i in range(3):
             self.varsFrame.grid_columnconfigure(i, weight=1, uniform="col")
         self.varsFrame.pack(side="top", pady=(10,0), fill="x")
 
@@ -171,8 +184,8 @@ def apply(self):
 
         
         self.confirmBtn = ctk.CTkButton(self.ATRtoplevel, text="Confirm", font=ctk.CTkFont(size=20), fg_color="#1a1720", hover_color="#16131c")
-        self.timerresthread = threading.Thread(target=confirm, args=(minres, maxres, interval, samples, self.confirmBtn, statusLabel), daemon=True)
-        self.confirmBtn.configure(command=lambda: parseAndStart(minres,maxres,interval,samples,self.confirmBtn))
+        self.timerresthread = threading.Thread(target=confirm, args=(minres, maxres, samples, self.confirmBtn, statusLabel), daemon=True)
+        self.confirmBtn.configure(command=lambda: parseAndStart(minres,maxres,samples,self.confirmBtn))
 
         self.confirmBtn.pack(side="top", pady=(10,0))
 
@@ -184,7 +197,7 @@ def apply(self):
 TRES_DIR = r"TimerResolution"
 
 
-def confirm(minres,maxres,interval,samples,btn,label):
+def confirm(minres,maxres,samples,btn,label):
     with Popen(resource_path("TimerResolution\\stress").split(" "),creationflags=CREATE_NO_WINDOW) as stresstest:
         label.master.master.openSubprocesses.append(stresstest)
         label.configure(text="Loading...")
@@ -192,7 +205,7 @@ def confirm(minres,maxres,interval,samples,btn,label):
         while time() - beforetime < 1: #wait 1s for stress test
             pass
         
-        threading.Thread(target=handleNtSetTimerResolution,args=(int(minres.get()),int(maxres.get()),int(interval.get()),samples.get(),label,stresstest), daemon=True).start()
+        threading.Thread(target=handleNtSetTimerResolution,args=(int(minres.get()),int(maxres.get()),samples.get(),label,stresstest), daemon=True).start()
 
 def error(btn,msg):
     btn.configure(text=msg)
@@ -212,18 +225,15 @@ def heartbeat(toplevel: ctk.CTkToplevel, stopflag):
             stopflag.set()
             break
 
-def parseAndStart(minres,maxres,interval,samples,btn):
+def parseAndStart(minres,maxres,samples,btn):
     try:
         min = int(minres.get())
         max = int(maxres.get())
-        iv = int(interval.get())
         sam = int(samples.get())
     except Exception:
         error(btn,"Integers only.")
         return
-    if iv <= 0:
-        error(btn,"Interval must be greater than 0.")
-    elif sam <= 0:
+    if sam <= 0:
         error(btn,"Samples must be greater than 0.")
     elif min >= max:
         error(btn,"Minimum must be less than maximum.")

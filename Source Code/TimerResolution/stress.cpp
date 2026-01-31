@@ -6,7 +6,7 @@
 void stressCPU(int id) {
     volatile double x = 0.0; // prevents compiler optimization
     while (true) {
-        for (int i = 1; i < 1000000; ++i) {
+        for (int i = 1; i < 100000000; ++i) {
             x += std::sqrt(i) * std::sin(i) * std::cos(i);
         }
     }

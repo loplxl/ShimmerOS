@@ -21,21 +21,21 @@ def apply(self):
         self.NVDDtoplevel.title("NVIDIA Driver Debloat")
         instructionsLabel = ctk.CTkLabel(self.NVDDtoplevel,text="Click this label and navigate to the Manual Driver Search. Download your recommended Game Ready driver and then use the box below to point this tool to the executable.",wraplength=395,cursor="hand2")
         instructionsLabel.bind("<Button-1>", lambda e: openLink("https://www.nvidia.com/en-gb/geforce/drivers/"))
-        instructionsLabel.pack(side="top",pady="8")
+        instructionsLabel.pack(side="top",pady=8)
         async def pick(statusLabel):
             try:
-                EXE_PATH = ctk.filedialog.askopenfile(title="Select the NVIDIA Driver to debloat",filetypes=[("Executable files", "*.exe")])
+                EXE_PATH = ctk.filedialog.askopenfilename(title="Select the NVIDIA Driver to debloat",filetypes=[("Executable files", "*.exe")])
                 if not EXE_PATH:
                     return
                 instructionsLabel.destroy()
                 btn.destroy()
-                command = f'"{path.join(getcwd()[:2],"/Program Files/","7-Zip/","7z.exe")}" x {EXE_PATH.name} -o{path.join(path.dirname(EXE_PATH.name),"SHIMMER_NVIDIA_DEBLOAT")} -y'
+                command = f'"{path.join(getcwd()[:2],"/Program Files/","7-Zip/","7z.exe")}" x {EXE_PATH} -o{path.join(path.dirname(EXE_PATH),"SHIMMER_NVIDIA_DEBLOAT")} -y'
                 statusLabel.configure(text="Extracting driver...")
                 self.NVDDtoplevel.attributes("-topmost", True)
                 self.NVDDtoplevel.after(10,lambda: self.NVDDtoplevel.attributes("-topmost", False))
                 system(command)
                 statusLabel.configure(text="Extracting complete\nDeleting unnecessary files...")
-                EXTRACTED_DIR = path.join(path.dirname(EXE_PATH.name),"SHIMMER_NVIDIA_DEBLOAT")
+                EXTRACTED_DIR = path.join(path.dirname(EXE_PATH),"SHIMMER_NVIDIA_DEBLOAT")
                 ignores = ["setup.cfg","setup.exe","Display.Driver","NVI2"]
                 for dir in listdir(EXTRACTED_DIR):
                     if not dir in ignores:

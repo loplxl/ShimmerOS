@@ -1,0 +1,7 @@
+{
+    "description":"Permanently set an executable to high priority.",
+    "descriptionsize": 18,
+    "titlesize": 36,
+    "toolname": "!Permanent_High_Priority.php",
+    "defaultExists": "yes"
+}

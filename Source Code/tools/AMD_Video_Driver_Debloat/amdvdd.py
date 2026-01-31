@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from webbrowser import open as openLink
-from os import path,getcwd,system,listdir,remove,rename,mkdir
+from os import path,getcwd,listdir,remove,rename,mkdir
 from subprocess import Popen, DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP, PIPE,run
 from shutil import rmtree
 import threading
@@ -23,10 +23,10 @@ def apply(self):
         self.AMDVDDtoplevel.title("AMD Video Driver Debloat")
         instructionsLabel = ctk.CTkLabel(self.AMDVDDtoplevel,text="Click this label to open AMD driver download page. Download your recommended driver (Adrenalin Edition needed) and then use the box below to point this tool to the executable.",wraplength=395,cursor="hand2")
         instructionsLabel.bind("<Button-1>", lambda e: openLink("https://www.amd.com/en/support/download/drivers.html#search-browse-drivers"))
-        instructionsLabel.pack(side="top",pady="8")
+        instructionsLabel.pack(side="top",pady=8)
         async def pick(statusLabel):
             try:
-                EXE_PATH = Path(ctk.filedialog.askopenfile(title="Select the AMD video Driver to debloat",filetypes=[("Executable files", "*.exe")]).name)
+                EXE_PATH = Path(ctk.filedialog.askopenfilename(title="Select the AMD video Driver to debloat",filetypes=[("Executable files", "*.exe")]))
                 CLEAN_DIR = EXE_PATH.parent / "SHIMMER_AMD_DEBLOAT"
                 if path.exists(CLEAN_DIR):
                     rmtree(CLEAN_DIR)

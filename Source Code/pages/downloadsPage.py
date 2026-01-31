@@ -80,7 +80,8 @@ downloads = { #category / [name to display,module location,font size]
         ["MoreClockTool","utility.mct",19],
         ["Display Driver\nUninstaller","utility.ddu",14],
         ["Radeon Software\nSlimmer","utility.rsslimmer",14],
-        ["NVCleanStall","utility.nvcs",20]
+        ["NVCleanStall","utility.nvcs",20],
+        ["CrystalDiskInfo","utility.cdinfo",20]
     ],
     "System Tools": [
         ["Process Lasso","utility.processlasso",19],
@@ -89,7 +90,9 @@ downloads = { #category / [name to display,module location,font size]
         ["Powershell 7","utility.powershell",20],
         ["Teracopy","utility.teracopy",22],
         ["Everything Search","utility.everything",18],
-        ["WizTree","utility.wiztree",22]
+        ["WizTree","utility.wiztree",22],
+        ["AutoHotkey v2.0","utility.ahk2",20],
+        ["AutoHotkey v1.1","utility.ahk1",20]
     ]
 }
 
