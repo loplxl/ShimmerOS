@@ -127,69 +127,69 @@ class tweaksPage(ctk.CTkFrame):
         else:
             with open(DATA_DIR,'r') as f:
                 data = json.load(f)
+
+        self.depends = {}
+        self.name_to_switch = {}
+        
         for directory in master.dirs:
+            name = directory.replace("_"," ")
             filesdir = join(bpath,directory)
             files = listdir(filesdir)
             print("Loading " + str(filesdir))
             description = "failed to load description"
+            helpjson = join(filesdir,"help.json")
             try:
-                with open(join(filesdir,"help.json"),'r') as f:
+                with open(helpjson, 'r') as f:
                     helpdata = json.load(f)
                     description = helpdata["description"]
                     file = helpdata["target"]
-            except Exception as e:
+            except KeyError as e:
                 file = str(e)
-            try:
-                with open(join(filesdir,"help.json"),'r') as f:
-                    requirement = helpdata["requirement"]
-            except Exception as e:
-                requirement = None
-            try:
-                with open(join(filesdir,"help.json"),'r') as f:
-                    CPUReq = helpdata["cpu"]
-            except Exception as e:
-                CPUReq = "none"
-            if not (CPUReq == "none" or CPUReq in master.CPUMans):
+            print(f"Checking hardware requirements for {directory}")
+            CPUReq = helpdata.get("cpu")
+            if not (CPUReq == None or CPUReq in master.CPUMans):
                 continue
-
-            try:
-                with open(join(filesdir,"help.json"),'r') as f:
-                    GPUReq = helpdata["gpu"]
-            except Exception as e:
-                GPUReq = "none"
-            if not (GPUReq == "none" or GPUReq in master.GPUMans):
+            GPUReq = helpdata.get("gpu")
+            if not (GPUReq == None or GPUReq in master.GPUMans):
                 continue
+            print(f"Checking software requirements for {directory}")
+            requirement = helpdata.get("requirement")
+            print(f"Checking dependencies for {directory}")
+            self.depends[directory] = helpdata.get("depends")
 
+            
             requirementNotMet = False
             if requirement == "nsudo" and not exists(join(SOFTWARE_DIR,"quickaccess","NSudo.exe")):
                 requirementNotMet = True
+            print(f"Passed requirements, creating frame for {directory}")
             localFrame = ctk.CTkFrame(self.dirbar)
-            localFrame.nameLabel = ctk.CTkLabel(localFrame, text=directory.replace("_"," "), font=ctk.CTkFont(size=24))
+            localFrame.nameLabel = ctk.CTkLabel(localFrame, text=name, font=ctk.CTkFont(size=24))
             localFrame.nameLabel.pack(side="left", padx=[10,0], pady=10)
             if requirementNotMet: 
-                localFrame.nameLabel.configure(text=f"Error: {directory.replace("_"," ")} depends on {requirement}", font=ctk.CTkFont(size=30))
+                print(f"Requirement not met for {directory}, placing error and skipping")
+                localFrame.nameLabel.configure(text=f"Error: {name} requires {requirement}", font=ctk.CTkFont(size=30))
+            elif "on.bat" in files and "off.bat" in files:
+                print(f"Creating regular on/off tweak for {directory}")
+                localFrame.switchvar = ctk.StringVar()
+                localFrame.switch = ctk.CTkSwitch(localFrame,width=116,text=None,variable=localFrame.switchvar,onvalue="on",offvalue="off",progress_color="transparent",
+                            command=lambda d=directory, f=localFrame: threading.Thread(target=self.ONOFFtweakClicked,args=(d,f, []),daemon=True).start())
+                try:
+                    s = data[directory]
+                    if s:
+                        localFrame.switch.select()
+                        localFrame.switch.configure(text="Enabled",fg_color="#55bb55",text_color="#55ff55",text_color_disabled="#55ff55")
+                    else:
+                        localFrame.switch.configure(text="Disabled",fg_color="#3865a8",text_color="#5599ff",text_color_disabled="#5599ff")
+                except Exception:
+                    print(f"Stored tweaks data does not contain information on {directory}.")
+                    localFrame.switch.configure(text="Unset",fg_color="#bb5555",text_color="#ff5555",text_color_disabled="#ff5555")
+                localFrame.switch.pack(side="right",padx=(0,8))
+            elif "action.bat" in files:
+                localFrame.onButton = ctk.CTkButton(localFrame, text="Apply", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.SingleBattweakclicked(d,f), width=116, font=ctk.CTkFont(size=16))
+                localFrame.onButton.pack(side="right",padx=8)
             else:
-                if "on.bat" in files and "off.bat" in files:
-                    localFrame.switchvar = ctk.StringVar()
-                    localFrame.switch = ctk.CTkSwitch(localFrame,width=116,text=None,variable=localFrame.switchvar,onvalue="on",offvalue="off",progress_color="transparent",
-                                command=lambda d=directory, f=localFrame: threading.Thread(target=self.ONOFFtweakClicked,args=(d,f),daemon=True).start())
-                    try:
-                        s = data[directory]
-                        if s:
-                            localFrame.switch.select()
-                            localFrame.switch.configure(text="Enabled",fg_color="#55bb55",text_color="#55ff55",text_color_disabled="#55ff55")
-                        else:
-                            localFrame.switch.configure(text="Disabled",fg_color="#3865a8",text_color="#5599ff",text_color_disabled="#5599ff")
-                    except Exception:
-                        print(f"Stored tweaks data does not contain information on {directory}.")
-                        localFrame.switch.configure(text="Unset",fg_color="#bb5555",text_color="#ff5555",text_color_disabled="#ff5555")
-                    localFrame.switch.pack(side="right",padx=(0,8))
-                elif "action.bat" in files:
-                    localFrame.onButton = ctk.CTkButton(localFrame, text="Apply", fg_color="#477843", hover_color="#376833", command=lambda d=directory, f=localFrame: self.SingleBattweakclicked(d,f), width=116, font=ctk.CTkFont(size=16))
-                    localFrame.onButton.pack(side="right",padx=8)
-                else:
-                    localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
-                    localFrame.errorLabel.pack(side="right",padx=8)
+                localFrame.errorLabel = ctk.CTkLabel(localFrame, text=file)
+                localFrame.errorLabel.pack(side="right",padx=8)
             localFrame.grid(row=r, column=0, sticky="nsew", padx=3, pady=6)
             descFrame = ctk.CTkFrame(self.dirbar)
             descLabel = ctk.CTkLabel(descFrame,text=description,wraplength=max(1,round((master.width/1250*1030)/2)-75))
@@ -200,6 +200,8 @@ class tweaksPage(ctk.CTkFrame):
             else:
                 master.shrink(localFrame.nameLabel, max(1,round((master.width/1250*1030)/2)-75), 30)
             r += 1
+            print(f"Frame created for {directory}")
+            self.name_to_switch[name] = localFrame.switch
     def __init__(self, master):
 
         super().__init__(master=master.main_area, fg_color="transparent")
@@ -234,11 +236,59 @@ class tweaksPage(ctk.CTkFrame):
             with open(DATA_DIR,'w') as f:
                 data[directory] = 0
                 json.dump(data,f,indent=4)
+    def showApplying(self, switch):
+        switch.configure(state="disabled")
+        switch.configure(text="Applying...",fg_color="#bbbbbb",text_color="#ffffff",text_color_disabled="#ffffff")
     
-    def ONOFFtweakClicked(self,directory,frame):
-        frame.switch.configure(state="disabled")
-        frame.switch.configure(text="Applying...",fg_color="#bbbbbb",text_color="#ffffff",text_color_disabled="#ffffff")
-        state = frame.switchvar.get()
+    def ONOFFtweakClicked(self, directory, frame, call_source=[]):
+        switch = frame.switch
+        print(f"{directory} clicked")
+        if call_source == []:
+            self.showApplying(switch)
+        try:
+            switchvar = frame.switchvar
+        except AttributeError:
+            raise Exception("frame doesnt have switchvar, cannot check dependencies")
+        state = switchvar.get()
+        if state == "on":
+            print(f"{directory} enabled, checking for dependencies...")
+            tweak_dependencies = self.depends.get(directory)
+            if tweak_dependencies != None:
+                print(f"Found these dependencies: {tweak_dependencies}")
+                for dependency in tweak_dependencies:
+                    if dependency in call_source:
+                        continue
+                    dep_switch = self.name_to_switch.get(dependency)
+                    if dep_switch == None:
+                        print(f"Tried to lookup {dependency} in:")
+                        print(self.name_to_switch)
+                        raise Exception("Erm. That dependency doesnt exist so I cant call it...")
+                    dep_value = dep_switch.get()
+                    if dep_value == 0 or dep_value == "off": #lying documentation https://customtkinter.tomschimansky.com/documentation/widgets/switch#get
+                        print(f"Toggling {dependency} on because of a dependency on {directory}")
+                        dep_switch.select()
+                        self.showApplying(dep_switch)
+                        self.ONOFFtweakClicked(dependency, dep_switch.master, call_source=call_source)
+            else:
+                print("No dependencies found")
+        else: #state is off duh
+            for rev_dep,val in self.depends.items():
+                if val == None:
+                    continue
+                print(f"Comparing {directory} with {val} for reverse dependency")
+                if val and directory in val: # if key depends on this tweak
+                    rev_dep_switch = self.name_to_switch.get(rev_dep)
+                    print(f"if this is None something is wrong: {rev_dep_switch}")
+                    if rev_dep_switch == None:
+                        raise Exception("Erm. That reverse dependency doesnt exist so I cant call it...")
+                    rev_dep_value = rev_dep_switch.get()
+                    if rev_dep_value == 1 or rev_dep_value == "on": #lying documentation https://customtkinter.tomschimansky.com/documentation/widgets/switch#get
+                        print(f"Toggling {rev_dep} off because of a dependency on {directory}, currently {rev_dep_switch.get()}")
+                        rev_dep_switch.deselect()
+                        call_source.append(rev_dep)
+                        self.showApplying(rev_dep_switch)
+                        self.ONOFFtweakClicked(rev_dep, rev_dep_switch.master, call_source=call_source)
+            
         path = abspath(join(self.master.master.basepath, directory, f"{state}.bat"))
         print(f"Running |{path}|.")
         self.colourlabel(Popen([f'{path}'], shell=True, text=True),frame,state,directory,("#aaffaa"))
