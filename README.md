@@ -57,6 +57,6 @@ Buttons are provided to apply / undo tweaks from ShimmerOS
   <br>
   <li><strong>Permanent High Priority:</strong></li>
     <ul>
-      <li>Automatically sets specified executables to high priority whenever they're launched.<br></li>
+      <li>Automatically sets specified executables to high priority whenever they're launched. This is done through registry, so no overhead from something like Process Lasso.<br></li>
     </ul>
 </ul>
