@@ -2,7 +2,7 @@ import aiohttp
 from pathlib import Path
 async def getURL(ssl_ctx,continuation,progressbar,completeDownload):
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(max_field_size=65536) as session:
             async with session.get("https://api.github.com/repos/GSDragoon/RadeonSoftwareSlimmer/releases",ssl=ssl_ctx) as resp:
                 resp.raise_for_status()
                 releases = await resp.json()

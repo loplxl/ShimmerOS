@@ -1,6 +1,6 @@
 import aiohttp
 async def get_url(ide,ssl_ctx):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(max_field_size=65536) as session:
         async with session.get("https://data.services.jetbrains.com/products/releases",ssl=ssl_ctx,params={
                                                                                                         'code': ide,
                                                                                                         'latest': 'true',

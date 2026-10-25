@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 async def getURL(ssl_ctx,continuation,progressbar,completeDownload):
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(max_field_size=65536) as session:
             async with session.get("https://notepad-plus-plus.org/#main",ssl=ssl_ctx) as resp:
                 resp.raise_for_status()
                 html = await resp.text()
