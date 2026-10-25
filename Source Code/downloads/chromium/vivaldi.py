@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from pathlib import Path
 async def getURL(ssl_ctx,continuation,progressbar,completeDownload):
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(max_field_size=65536) as session:
             async with session.get("https://vivaldi.com/download/",ssl=ssl_ctx) as resp:
                 resp.raise_for_status()
                 html = await resp.text()

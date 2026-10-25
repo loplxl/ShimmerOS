@@ -32,8 +32,8 @@ async def getURL(self,btn,modulename,w):
                     threading.Thread(target=lambda: self.after(0,progressbar.set,frac), daemon=True).start()
                     lastUpdateFrac = frac
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url,ssl=ssl_ctx) as resp:
+            async with aiohttp.ClientSession(max_field_size=65536) as session:
+                async with session.get(url, ssl=ssl_ctx) as resp:
                     resp.raise_for_status()
                     total = resp.content_length or 0
                     downloaded = 0
