@@ -173,7 +173,7 @@ class downloadsPage(ctk.CTkFrame):
                         threading.Thread(target=lambda: self.after(0,progressbar.set,frac), daemon=True).start()
                         lastUpdateFrac = frac
             try:
-                async with aiohttp.ClientSession() as session:
+                async with aiohttp.ClientSession(max_field_size=65536) as session:
                     async with session.get(url,ssl=ssl_ctx,timeout=360000) as resp:
                         resp.raise_for_status()
                         total = resp.content_length or 0

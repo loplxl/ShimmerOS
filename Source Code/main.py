@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-version = "1.7.0.7"
+version = "1.7.0.8"
 import ctypes
 import sys
 admin = False
@@ -97,7 +97,7 @@ class newGUI(ctk.CTk):
         log("Current version: " + self.CurrentVersion)
         status = [0,0]
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(max_field_size=65536) as session:
                 async with session.get("https://api.github.com/repos/loplxl/ShimmerOS/releases/tags/" + self.CurrentVersion) as resp:
                     resp.raise_for_status()
                     jsonresp = await resp.json()
@@ -137,7 +137,7 @@ class newGUI(ctk.CTk):
                 h256.update(open(UPD_PATH,'rb').read())
                 hash = h256.hexdigest()
                 try:
-                    async with aiohttp.ClientSession() as session:
+                    async with aiohttp.ClientSession(max_field_size=65536) as session:
                         async with session.get("https://api.github.com/repos/loplxl/ShimmerUpdater/releases/latest") as resp3:
                             resp3.raise_for_status()
                             Uresp = await resp3.json()
@@ -154,7 +154,7 @@ class newGUI(ctk.CTk):
                     log("Auto updater not corrupted and up to date, proceeding...")
                     break
             if install:
-                async with aiohttp.ClientSession() as session:
+                async with aiohttp.ClientSession(max_field_size=65536) as session:
                     async with session.get("https://github.com/loplxl/ShimmerUpdater/releases/latest/download/ShimmerUpdater.exe") as resp:
                         resp.raise_for_status()
                         with open(UPD_PATH, "wb") as f:
